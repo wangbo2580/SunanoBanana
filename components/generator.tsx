@@ -1,13 +1,15 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Upload, ImageIcon, Sparkles, Loader2, Download, X } from "lucide-react"
+import { Upload, ImageIcon, Sparkles, Loader2, Download, X, LogIn, AlertCircle } from "lucide-react"
+import { User } from "@supabase/supabase-js"
+import { signInWithGoogle } from "@/app/auth/actions"
 
 interface GeneratedImage {
   type: string
@@ -16,7 +18,11 @@ interface GeneratedImage {
   }
 }
 
-export function Generator() {
+interface GeneratorProps {
+  user: User | null
+}
+
+export function Generator({ user }: GeneratorProps) {
   const t = useTranslations("generator")
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [prompt, setPrompt] = useState("")
@@ -24,6 +30,26 @@ export function Generator() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([])
   const [responseText, setResponseText] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [remaining, setRemaining] = useState<number | null>(null)
+  const [isLoadingQuota, setIsLoadingQuota] = useState(false)
+
+  // 获取用户使用额度
+  useEffect(() => {
+    if (user) {
+      setIsLoadingQuota(true)
+      fetch("/api/usage")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.remaining !== undefined) {
+            setRemaining(data.remaining)
+          }
+        })
+        .catch(console.error)
+        .finally(() => setIsLoadingQuota(false))
+    }
+  }, [user])
+
+  const isQuotaExceeded = remaining !== null && remaining <= 0
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -76,6 +102,11 @@ export function Generator() {
         setResponseText(data.text)
       }
 
+      // 更新剩余额度
+      if (data.remaining !== undefined) {
+        setRemaining(data.remaining)
+      }
+
       if ((!data.images || data.images.length === 0) && !data.text) {
         setError(t("noImageGenerated"))
       }
@@ -114,6 +145,58 @@ export function Generator() {
           </div>
 
           <Card className="p-8 md:p-12">
+            {/* 未登录提示 */}
+            {!user && (
+              <div className="mb-8 p-6 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <div className="flex items-start gap-4">
+                  <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-amber-700 dark:text-amber-400">
+                      {t("loginRequired")}
+                    </h3>
+                    <p className="text-sm text-amber-600 dark:text-amber-300 mt-1">
+                      {t("loginRequiredDesc")}
+                    </p>
+                    <form action={signInWithGoogle} className="mt-4">
+                      <Button type="submit" variant="default" size="sm" className="gap-2">
+                        <LogIn className="w-4 h-4" />
+                        {t("loginWithGoogle")}
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 额度用尽提示 */}
+            {user && isQuotaExceeded && (
+              <div className="mb-8 p-6 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <div className="flex items-start gap-4">
+                  <AlertCircle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-destructive">
+                      {t("quotaExceeded")}
+                    </h3>
+                    <p className="text-sm text-destructive/80 mt-1">
+                      {t("quotaExceededDesc")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 剩余额度显示 */}
+            {user && remaining !== null && !isQuotaExceeded && (
+              <div className="mb-8 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{t("remainingQuota")}</span>
+                  <span className="text-lg font-bold text-primary">
+                    {remaining} / 2
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-2 gap-12">
               {/* Upload Section */}
               <div className="space-y-6">
@@ -185,7 +268,7 @@ export function Generator() {
                   className="w-full"
                   size="lg"
                   onClick={handleGenerate}
-                  disabled={isGenerating || !selectedImage || !prompt.trim()}
+                  disabled={isGenerating || !selectedImage || !prompt.trim() || !user || isQuotaExceeded}
                 >
                   {isGenerating ? (
                     <>

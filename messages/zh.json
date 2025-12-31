@@ -29,7 +29,13 @@
     "fileSizeError": "文件大小必须小于 10MB",
     "uploadFirst": "请先上传图片",
     "enterPrompt": "请输入提示词",
-    "noImageGenerated": "未生成图像，请尝试不同的提示词。"
+    "noImageGenerated": "未生成图像，请尝试不同的提示词。",
+    "loginRequired": "需要登录",
+    "loginRequiredDesc": "请使用 Google 账号登录后使用 AI 图片编辑功能。",
+    "loginWithGoogle": "使用 Google 登录",
+    "quotaExceeded": "额度已用完",
+    "quotaExceededDesc": "您的免费额度已用完（2/2）。感谢您试用 SuMu Nano Banana！",
+    "remainingQuota": "剩余额度"
   },
   "features": {
     "title": "核心功能",

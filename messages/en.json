@@ -29,7 +29,13 @@
     "fileSizeError": "File size must be less than 10MB",
     "uploadFirst": "Please upload an image first",
     "enterPrompt": "Please enter a prompt",
-    "noImageGenerated": "No image was generated. Please try a different prompt."
+    "noImageGenerated": "No image was generated. Please try a different prompt.",
+    "loginRequired": "Login Required",
+    "loginRequiredDesc": "Please login with Google to use the AI image editing feature.",
+    "loginWithGoogle": "Login with Google",
+    "quotaExceeded": "Quota Exceeded",
+    "quotaExceededDesc": "Your free quota has been used up (2/2). Thank you for trying SuMu Nano Banana!",
+    "remainingQuota": "Remaining Quota"
   },
   "features": {
     "title": "Core Features",
