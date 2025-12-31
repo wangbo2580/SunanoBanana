@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -16,6 +17,7 @@ interface GeneratedImage {
 }
 
 export function Generator() {
+  const t = useTranslations("generator")
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [prompt, setPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
@@ -27,7 +29,7 @@ export function Generator() {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        setError("File size must be less than 10MB")
+        setError(t("fileSizeError"))
         return
       }
       const reader = new FileReader()
@@ -41,11 +43,11 @@ export function Generator() {
 
   const handleGenerate = async () => {
     if (!selectedImage) {
-      setError("Please upload an image first")
+      setError(t("uploadFirst"))
       return
     }
     if (!prompt.trim()) {
-      setError("Please enter a prompt")
+      setError(t("enterPrompt"))
       return
     }
 
@@ -74,9 +76,8 @@ export function Generator() {
         setResponseText(data.text)
       }
 
-      // If no images and no text, show error
       if ((!data.images || data.images.length === 0) && !data.text) {
-        setError("No image was generated. Please try a different prompt.")
+        setError(t("noImageGenerated"))
       }
     } catch (err: any) {
       setError(err.message || "An error occurred while generating the image")
@@ -106,10 +107,9 @@ export function Generator() {
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-5xl font-bold text-balance">Get Started</h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-balance">{t("title")}</h2>
             <p className="text-lg text-muted-foreground text-balance">
-              Experience the power of nano-banana's natural language image editing. Transform any photo with simple text
-              commands.
+              {t("description")}
             </p>
           </div>
 
@@ -118,7 +118,7 @@ export function Generator() {
               {/* Upload Section */}
               <div className="space-y-6">
                 <div>
-                  <Label className="text-lg font-semibold mb-4 block">Reference Image</Label>
+                  <Label className="text-lg font-semibold mb-4 block">{t("referenceImage")}</Label>
                   <div
                     className="relative border-2 border-dashed rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/30"
                     onClick={() => document.getElementById("image-upload")?.click()}
@@ -146,8 +146,8 @@ export function Generator() {
                       <div className="space-y-4">
                         <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
                         <div>
-                          <p className="font-medium">Click to upload image</p>
-                          <p className="text-sm text-muted-foreground mt-1">Max 10MB</p>
+                          <p className="font-medium">{t("uploadImage")}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{t("maxSize")}</p>
                         </div>
                       </div>
                     )}
@@ -163,11 +163,11 @@ export function Generator() {
 
                 <div>
                   <Label htmlFor="prompt" className="text-lg font-semibold mb-4 block">
-                    Main Prompt
+                    {t("mainPrompt")}
                   </Label>
                   <Textarea
                     id="prompt"
-                    placeholder="Describe your desired edits... e.g., 'place the subject in a snowy mountain scene' or 'add a sunset background'"
+                    placeholder={t("placeholder")}
                     className="min-h-32 resize-none"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
@@ -190,12 +190,12 @@ export function Generator() {
                   {isGenerating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
+                      {t("generating")}
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Now
+                      {t("generateNow")}
                     </>
                   )}
                 </Button>
@@ -204,13 +204,13 @@ export function Generator() {
               {/* Output Section */}
               <div className="space-y-6">
                 <div>
-                  <Label className="text-lg font-semibold mb-4 block">Output Gallery</Label>
+                  <Label className="text-lg font-semibold mb-4 block">{t("outputGallery")}</Label>
                   <div className="border-2 rounded-lg p-6 bg-muted/30 min-h-[300px]">
                     {isGenerating ? (
                       <div className="flex flex-col items-center justify-center h-full min-h-[250px]">
                         <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                        <p className="text-lg font-medium">Generating your image...</p>
-                        <p className="text-sm text-muted-foreground mt-2">This may take a few moments</p>
+                        <p className="text-lg font-medium">{t("generatingImage")}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{t("mayTakeMoments")}</p>
                       </div>
                     ) : generatedImages.length > 0 || responseText ? (
                       <div className="space-y-4">
@@ -227,7 +227,7 @@ export function Generator() {
                               onClick={() => handleDownload(img.image_url.url, index)}
                             >
                               <Download className="w-4 h-4 mr-2" />
-                              Download
+                              {t("download")}
                             </Button>
                           </div>
                         ))}
@@ -240,17 +240,17 @@ export function Generator() {
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full min-h-[250px]">
                         <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                        <p className="text-lg font-medium">Your ultra-fast AI creations appear here</p>
-                        <p className="text-sm text-muted-foreground mt-2">Ready for instant generation</p>
+                        <p className="text-lg font-medium">{t("creationsAppear")}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{t("readyForGeneration")}</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div className="p-4 bg-primary/10 rounded-lg text-center">
-                  <p className="text-sm font-medium">Want more powerful image generation features?</p>
+                  <p className="text-sm font-medium">{t("moreFeatures")}</p>
                   <Button variant="link" className="text-primary">
-                    Visit Full Generator →
+                    {t("visitGenerator")}
                   </Button>
                 </div>
               </div>

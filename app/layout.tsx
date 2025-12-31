@@ -2,13 +2,16 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { NextIntlClientProvider } from "next-intl"
+import { getLocale, getMessages } from "next-intl/server"
+import { Header } from "@/components/header"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Nano Banana - AI Image Editor | Edit Photos with Text",
+  title: "SuMu Nano Banana - AI Image Editor | Edit Photos with Text",
   description:
     "Transform any image with simple text prompts. Nano-banana's advanced model delivers consistent character editing and scene preservation.",
   generator: "v0.app",
@@ -31,15 +34,23 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`font-sans antialiased`}>
-        {children}
+        <NextIntlClientProvider messages={messages}>
+          <Header />
+          <div className="pt-16">
+            {children}
+          </div>
+        </NextIntlClientProvider>
         <Analytics />
       </body>
     </html>

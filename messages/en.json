@@ -1,0 +1,143 @@
+{
+  "hero": {
+    "badge": "The AI model that outperforms Flux Kontext",
+    "description": "Transform any image with simple text prompts. Nano-banana's advanced model delivers consistent character editing and scene preservation that surpasses Flux Kontext.",
+    "startEditing": "Start Editing",
+    "viewExamples": "View Examples",
+    "oneShot": "One-shot editing",
+    "multiImage": "Multi-image support",
+    "naturalLanguage": "Natural language"
+  },
+  "generator": {
+    "title": "Get Started",
+    "description": "Experience the power of nano-banana's natural language image editing. Transform any photo with simple text commands.",
+    "referenceImage": "Reference Image",
+    "uploadImage": "Click to upload image",
+    "maxSize": "Max 10MB",
+    "mainPrompt": "Main Prompt",
+    "placeholder": "Describe your desired edits... e.g., 'place the subject in a snowy mountain scene' or 'add a sunset background'",
+    "generateNow": "Generate Now",
+    "generating": "Generating...",
+    "outputGallery": "Output Gallery",
+    "generatingImage": "Generating your image...",
+    "mayTakeMoments": "This may take a few moments",
+    "creationsAppear": "Your ultra-fast AI creations appear here",
+    "readyForGeneration": "Ready for instant generation",
+    "download": "Download",
+    "moreFeatures": "Want more powerful image generation features?",
+    "visitGenerator": "Visit Full Generator →",
+    "fileSizeError": "File size must be less than 10MB",
+    "uploadFirst": "Please upload an image first",
+    "enterPrompt": "Please enter a prompt",
+    "noImageGenerated": "No image was generated. Please try a different prompt."
+  },
+  "features": {
+    "title": "Core Features",
+    "description": "Why Choose SuMu Nano Banana? Nano-banana is the most advanced AI image editor. Revolutionize your photo editing with natural language understanding.",
+    "naturalLanguage": {
+      "title": "Natural Language Editing",
+      "description": "Edit images using simple text prompts. Nano-banana AI understands complex instructions like GPT for images"
+    },
+    "characterConsistency": {
+      "title": "Character Consistency",
+      "description": "Maintain perfect character details across edits. This model excels at preserving faces and identities"
+    },
+    "scenePreservation": {
+      "title": "Scene Preservation",
+      "description": "Seamlessly blend edits with original backgrounds. Superior scene fusion compared to Flux Kontext"
+    },
+    "oneShot": {
+      "title": "One-Shot Editing",
+      "description": "Perfect results in a single attempt. Nano-banana solves one-shot image editing challenges effortlessly"
+    },
+    "multiImage": {
+      "title": "Multi-Image Context",
+      "description": "Process multiple images simultaneously. Support for advanced multi-image editing workflows"
+    },
+    "aiUgc": {
+      "title": "AI UGC Creation",
+      "description": "Create consistent AI influencers and UGC content. Perfect for social media and marketing campaigns"
+    }
+  },
+  "showcase": {
+    "title": "Showcase",
+    "description": "Lightning-Fast AI Creations - See what Nano Banana generates in milliseconds",
+    "speed": "Nano Banana Speed",
+    "experience": "Experience the power of Nano Banana yourself",
+    "tryGenerator": "Try Nano Banana Generator",
+    "items": {
+      "mountain": {
+        "title": "Ultra-Fast Mountain Generation",
+        "description": "Created in 0.8 seconds with Nano Banana's optimized neural engine"
+      },
+      "garden": {
+        "title": "Instant Garden Creation",
+        "description": "Complex scene rendered in milliseconds using Nano Banana technology"
+      },
+      "beach": {
+        "title": "Real-time Beach Synthesis",
+        "description": "Nano Banana delivers photorealistic results at lightning speed"
+      },
+      "aurora": {
+        "title": "Rapid Aurora Generation",
+        "description": "Advanced effects processed instantly with Nano Banana AI"
+      }
+    }
+  },
+  "reviews": {
+    "title": "User Reviews",
+    "description": "What creators are saying",
+    "items": {
+      "artist": {
+        "name": "AIArtistPro",
+        "role": "Digital Creator",
+        "content": "This editor completely changed my workflow. The character consistency is incredible - miles ahead of Flux Kontext!"
+      },
+      "creator": {
+        "name": "ContentCreator",
+        "role": "UGC Specialist",
+        "content": "Creating consistent AI influencers has never been easier. It maintains perfect face details across edits!"
+      },
+      "editor": {
+        "name": "PhotoEditor",
+        "role": "Professional Editor",
+        "content": "One-shot editing is basically solved with this tool. The scene blending is so natural and realistic!"
+      }
+    }
+  },
+  "faq": {
+    "title": "FAQs",
+    "description": "Frequently Asked Questions",
+    "items": {
+      "what": {
+        "question": "What is SuMu Nano Banana?",
+        "answer": "It's a revolutionary AI image editing model that transforms photos using natural language prompts. This is currently the most powerful image editing model available, with exceptional consistency. It offers superior performance compared to Flux Kontext for consistent character editing and scene preservation."
+      },
+      "how": {
+        "question": "How does it work?",
+        "answer": "Simply upload an image and describe your desired edits in natural language. The AI understands complex instructions like \"place the creature in a snowy mountain\" or \"imagine the whole face and create it\". It processes your text prompt and generates perfectly edited images."
+      },
+      "better": {
+        "question": "How is it better than Flux Kontext?",
+        "answer": "This model excels in character consistency, scene blending, and one-shot editing. Users report it \"completely destroys\" Flux Kontext in preserving facial features and seamlessly integrating edits with backgrounds. It also supports multi-image context, making it ideal for creating consistent AI influencers."
+      },
+      "commercial": {
+        "question": "Can I use it for commercial projects?",
+        "answer": "Yes! It's perfect for creating AI UGC content, social media campaigns, and marketing materials. Many users leverage it for creating consistent AI influencers and product photography. The high-quality outputs are suitable for professional use."
+      },
+      "types": {
+        "question": "What types of edits can it handle?",
+        "answer": "The editor handles complex edits including face completion, background changes, object placement, style transfers, and character modifications. It excels at understanding contextual instructions like \"place in a blizzard\" or \"create the whole face\" while maintaining photorealistic quality."
+      }
+    }
+  },
+  "footer": {
+    "tagline": "Transform any image with simple text prompts.",
+    "copyright": "© 2025 SuMu Nano Banana. All rights reserved.",
+    "independent": "SuMu Nano Banana is an independent AI image editor."
+  },
+  "language": {
+    "en": "English",
+    "zh": "中文"
+  }
+}

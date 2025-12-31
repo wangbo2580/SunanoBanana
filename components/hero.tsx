@@ -1,6 +1,11 @@
+"use client"
+
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 
 export function Hero() {
+  const t = useTranslations("hero")
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/20">
       {/* Banana decorative elements */}
@@ -12,37 +17,36 @@ export function Hero() {
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium">
             <span className="text-2xl">🍌</span>
-            <span className="text-primary">The AI model that outperforms Flux Kontext</span>
+            <span className="text-primary">{t("badge")}</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance">SuMu Nano Banana</h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground text-balance leading-relaxed">
-            Transform any image with simple text prompts. Nano-banana's advanced model delivers consistent character
-            editing and scene preservation that surpasses Flux Kontext.
+            {t("description")}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Button size="lg" className="text-lg px-8">
-              Start Editing
+              {t("startEditing")}
             </Button>
             <Button size="lg" variant="outline" className="text-lg px-8 bg-transparent">
-              View Examples
+              {t("viewExamples")}
             </Button>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-6 pt-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-primary rounded-full" />
-              <span>One-shot editing</span>
+              <span>{t("oneShot")}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-primary rounded-full" />
-              <span>Multi-image support</span>
+              <span>{t("multiImage")}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-primary rounded-full" />
-              <span>Natural language</span>
+              <span>{t("naturalLanguage")}</span>
             </div>
           </div>
         </div>

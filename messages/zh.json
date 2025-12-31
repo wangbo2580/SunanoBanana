@@ -1,0 +1,143 @@
+{
+  "hero": {
+    "badge": "超越 Flux Kontext 的 AI 模型",
+    "description": "通过简单的文字提示转换任意图像。Nano-banana 的先进模型提供一致的角色编辑和场景保留，表现超越 Flux Kontext。",
+    "startEditing": "开始编辑",
+    "viewExamples": "查看示例",
+    "oneShot": "一次成型",
+    "multiImage": "多图支持",
+    "naturalLanguage": "自然语言"
+  },
+  "generator": {
+    "title": "开始使用",
+    "description": "体验 nano-banana 自然语言图像编辑的强大功能。用简单的文字命令转换任何照片。",
+    "referenceImage": "参考图像",
+    "uploadImage": "点击上传图片",
+    "maxSize": "最大 10MB",
+    "mainPrompt": "主要提示词",
+    "placeholder": "描述您想要的编辑效果... 例如：'将主体放在雪山场景中' 或 '添加日落背景'",
+    "generateNow": "立即生成",
+    "generating": "生成中...",
+    "outputGallery": "输出画廊",
+    "generatingImage": "正在生成您的图像...",
+    "mayTakeMoments": "这可能需要一些时间",
+    "creationsAppear": "您的超快 AI 创作将在此显示",
+    "readyForGeneration": "准备就绪，即刻生成",
+    "download": "下载",
+    "moreFeatures": "想要更强大的图像生成功能？",
+    "visitGenerator": "访问完整生成器 →",
+    "fileSizeError": "文件大小必须小于 10MB",
+    "uploadFirst": "请先上传图片",
+    "enterPrompt": "请输入提示词",
+    "noImageGenerated": "未生成图像，请尝试不同的提示词。"
+  },
+  "features": {
+    "title": "核心功能",
+    "description": "为什么选择 SuMu Nano Banana？Nano-banana 是最先进的 AI 图像编辑器。用自然语言理解革新您的照片编辑体验。",
+    "naturalLanguage": {
+      "title": "自然语言编辑",
+      "description": "使用简单的文字提示编辑图像。Nano-banana AI 理解复杂指令，如同图像版的 GPT"
+    },
+    "characterConsistency": {
+      "title": "角色一致性",
+      "description": "在编辑过程中保持完美的角色细节。该模型擅长保留面部和身份特征"
+    },
+    "scenePreservation": {
+      "title": "场景保留",
+      "description": "将编辑与原始背景无缝融合。场景融合能力优于 Flux Kontext"
+    },
+    "oneShot": {
+      "title": "一次成型",
+      "description": "一次尝试即可获得完美结果。Nano-banana 轻松解决一次性图像编辑挑战"
+    },
+    "multiImage": {
+      "title": "多图上下文",
+      "description": "同时处理多张图像。支持高级多图编辑工作流程"
+    },
+    "aiUgc": {
+      "title": "AI UGC 创作",
+      "description": "创建一致的 AI 网红和 UGC 内容。非常适合社交媒体和营销活动"
+    }
+  },
+  "showcase": {
+    "title": "作品展示",
+    "description": "闪电般快速的 AI 创作 - 看看 Nano Banana 在毫秒内生成的作品",
+    "speed": "Nano Banana 速度",
+    "experience": "亲自体验 Nano Banana 的强大功能",
+    "tryGenerator": "试用 Nano Banana 生成器",
+    "items": {
+      "mountain": {
+        "title": "超快山景生成",
+        "description": "使用 Nano Banana 优化的神经引擎在 0.8 秒内创建"
+      },
+      "garden": {
+        "title": "即时花园创建",
+        "description": "使用 Nano Banana 技术在毫秒内渲染复杂场景"
+      },
+      "beach": {
+        "title": "实时海滩合成",
+        "description": "Nano Banana 以闪电般的速度提供逼真效果"
+      },
+      "aurora": {
+        "title": "快速极光生成",
+        "description": "使用 Nano Banana AI 即时处理高级效果"
+      }
+    }
+  },
+  "reviews": {
+    "title": "用户评价",
+    "description": "创作者们的评价",
+    "items": {
+      "artist": {
+        "name": "AIArtistPro",
+        "role": "数字创作者",
+        "content": "这个编辑器彻底改变了我的工作流程。角色一致性令人难以置信 - 远超 Flux Kontext！"
+      },
+      "creator": {
+        "name": "ContentCreator",
+        "role": "UGC 专家",
+        "content": "创建一致的 AI 网红从未如此简单。它在编辑过程中完美保持面部细节！"
+      },
+      "editor": {
+        "name": "PhotoEditor",
+        "role": "专业编辑",
+        "content": "一次成型编辑基本上用这个工具就解决了。场景融合非常自然和真实！"
+      }
+    }
+  },
+  "faq": {
+    "title": "常见问题",
+    "description": "常见问题解答",
+    "items": {
+      "what": {
+        "question": "什么是 SuMu Nano Banana？",
+        "answer": "这是一个革命性的 AI 图像编辑模型，使用自然语言提示转换照片。这是目前最强大的图像编辑模型，具有卓越的一致性。在一致的角色编辑和场景保留方面，它的表现优于 Flux Kontext。"
+      },
+      "how": {
+        "question": "它是如何工作的？",
+        "answer": "只需上传图像并用自然语言描述您想要的编辑。AI 理解复杂的指令，如「将生物放在雪山中」或「想象整张脸并创建它」。它处理您的文本提示并生成完美编辑的图像。"
+      },
+      "better": {
+        "question": "它比 Flux Kontext 好在哪里？",
+        "answer": "该模型在角色一致性、场景融合和一次成型编辑方面表现出色。用户报告说它在保留面部特征和将编辑与背景无缝集成方面「完全碾压」 Flux Kontext。它还支持多图上下文，非常适合创建一致的 AI 网红。"
+      },
+      "commercial": {
+        "question": "我可以将它用于商业项目吗？",
+        "answer": "可以！它非常适合创建 AI UGC 内容、社交媒体活动和营销材料。许多用户利用它创建一致的 AI 网红和产品摄影。高质量的输出适合专业使用。"
+      },
+      "types": {
+        "question": "它可以处理哪些类型的编辑？",
+        "answer": "该编辑器可以处理复杂的编辑，包括面部补全、背景更改、物体放置、风格转换和角色修改。它擅长理解上下文指令，如「放在暴风雪中」或「创建整张脸」，同时保持逼真的质量。"
+      }
+    }
+  },
+  "footer": {
+    "tagline": "通过简单的文字提示转换任意图像。",
+    "copyright": "© 2025 SuMu Nano Banana. 保留所有权利。",
+    "independent": "SuMu Nano Banana 是一个独立的 AI 图像编辑器。"
+  },
+  "language": {
+    "en": "English",
+    "zh": "中文"
+  }
+}
