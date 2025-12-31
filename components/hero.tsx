@@ -15,7 +15,7 @@ export function Hero() {
             <span className="text-primary">The AI model that outperforms Flux Kontext</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance">Nano Banana</h1>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance">SuMu Nano Banana</h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground text-balance leading-relaxed">
             Transform any image with simple text prompts. Nano-banana's advanced model delivers consistent character
