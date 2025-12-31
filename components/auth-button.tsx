@@ -8,15 +8,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { signInWithGoogle, signOut } from "@/app/auth/actions"
+import { signInWithGoogle } from "@/app/auth/actions"
+import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { LogOut, User as UserIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface AuthButtonProps {
   user: User | null
 }
 
 export function AuthButton({ user }: AuthButtonProps) {
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.refresh()
+  }
+
   if (user) {
     const initials = user.user_metadata?.full_name
       ?.split(" ")
@@ -57,13 +67,9 @@ export function AuthButton({ user }: AuthButtonProps) {
               </p>
             </div>
           </div>
-          <DropdownMenuItem asChild>
-            <form action={signOut} className="w-full">
-              <button type="submit" className="flex items-center gap-2 w-full cursor-pointer">
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
-              </button>
-            </form>
+          <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+            <LogOut className="h-4 w-4 mr-2" />
+            <span>Sign Out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
