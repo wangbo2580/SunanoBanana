@@ -140,7 +140,139 @@
   "footer": {
     "tagline": "Transform any image with simple text prompts.",
     "copyright": "© 2025 SuMu Nano Banana. All rights reserved.",
-    "independent": "SuMu Nano Banana is an independent AI image editor."
+    "independent": "SuMu Nano Banana is an independent AI image editor.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "backToHome": "Back to Home",
+    "lastUpdated": "Last Updated",
+    "sections": {
+      "intro": {
+        "title": "Introduction",
+        "content": "Welcome to SuMu Nano Banana. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI image editing service."
+      },
+      "collection": {
+        "title": "Information We Collect",
+        "content": "We collect information that you provide directly to us when using our service:",
+        "items": {
+          "account": "Account information: When you sign in with Google, we receive your email address, name, and profile picture.",
+          "usage": "Usage data: We track your service usage, including the number of image generations.",
+          "images": "Images: The images you upload for editing are processed by our AI system.",
+          "device": "Device information: We may collect information about your device, browser type, and IP address."
+        }
+      },
+      "use": {
+        "title": "How We Use Your Information",
+        "content": "We use the information we collect for the following purposes:",
+        "items": {
+          "service": "To provide and maintain our AI image editing service.",
+          "improve": "To improve and optimize our service and user experience.",
+          "communicate": "To communicate with you about updates, security alerts, and support.",
+          "security": "To detect, prevent, and address technical issues and abuse."
+        }
+      },
+      "sharing": {
+        "title": "Information Sharing",
+        "content": "We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances: with your consent, to comply with legal obligations, to protect our rights and safety, or with service providers who assist us in operating our service (such as cloud hosting and authentication providers)."
+      },
+      "security": {
+        "title": "Data Security",
+        "content": "We implement appropriate technical and organizational security measures to protect your personal information. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security."
+      },
+      "cookies": {
+        "title": "Cookies and Tracking",
+        "content": "We use cookies and similar tracking technologies to track activity on our service and store certain information. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent."
+      },
+      "rights": {
+        "title": "Your Rights",
+        "content": "Depending on your location, you may have certain rights regarding your personal information:",
+        "items": {
+          "access": "The right to access the personal information we hold about you.",
+          "correct": "The right to request correction of inaccurate personal information.",
+          "delete": "The right to request deletion of your personal information.",
+          "export": "The right to request a copy of your data in a portable format."
+        }
+      },
+      "changes": {
+        "title": "Changes to This Policy",
+        "content": "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the \"Last Updated\" date."
+      },
+      "contact": {
+        "title": "Contact Us",
+        "content": "If you have any questions about this Privacy Policy, please contact us through our website."
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "backToHome": "Back to Home",
+    "lastUpdated": "Last Updated",
+    "sections": {
+      "acceptance": {
+        "title": "Acceptance of Terms",
+        "content": "By accessing or using SuMu Nano Banana, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our service."
+      },
+      "description": {
+        "title": "Service Description",
+        "content": "SuMu Nano Banana is an AI-powered image editing service that allows users to transform images using natural language prompts. We provide a limited number of free generations, after which additional usage may require payment or subscription."
+      },
+      "account": {
+        "title": "User Account",
+        "content": "To use certain features of our service, you must create an account by signing in with Google. You agree to:",
+        "items": {
+          "accurate": "Provide accurate and complete information.",
+          "secure": "Maintain the security of your account credentials.",
+          "responsible": "Be responsible for all activities that occur under your account.",
+          "notify": "Notify us immediately of any unauthorized use of your account."
+        }
+      },
+      "usage": {
+        "title": "Acceptable Use",
+        "content": "You agree to use our service only for lawful purposes and in accordance with these Terms. You agree not to:",
+        "items": {
+          "legal": "Use the service for any illegal purpose or in violation of any laws.",
+          "noHarm": "Generate content that is harmful, abusive, harassing, or threatening.",
+          "noInfringe": "Infringe upon the intellectual property rights of others.",
+          "noMalware": "Upload malware, viruses, or any harmful code.",
+          "noAbuse": "Attempt to bypass usage limits or abuse the service."
+        }
+      },
+      "content": {
+        "title": "User Content",
+        "content": "You retain ownership of the images you upload. By using our service, you grant us a limited license to process your images for the purpose of providing the service. You represent and warrant that:",
+        "items": {
+          "own": "You own or have the necessary rights to the images you upload.",
+          "rights": "Your use of our service does not violate the rights of any third party.",
+          "noIllegal": "Your content does not contain illegal or prohibited material."
+        }
+      },
+      "ip": {
+        "title": "Intellectual Property",
+        "content": "The service, including its original content, features, and functionality, is owned by SuMu Nano Banana and is protected by international copyright, trademark, and other intellectual property laws. Our trademarks and trade dress may not be used without our prior written permission."
+      },
+      "disclaimer": {
+        "title": "Disclaimer of Warranties",
+        "content": "Our service is provided \"as is\" and \"as available\" without any warranties of any kind, either express or implied. We do not warrant that the service will be uninterrupted, secure, or error-free, or that the results obtained from the service will be accurate or reliable."
+      },
+      "limitation": {
+        "title": "Limitation of Liability",
+        "content": "To the maximum extent permitted by law, SuMu Nano Banana shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses, resulting from your use of or inability to use the service."
+      },
+      "termination": {
+        "title": "Termination",
+        "content": "We may terminate or suspend your account and access to the service immediately, without prior notice or liability, for any reason, including if you breach these Terms. Upon termination, your right to use the service will immediately cease."
+      },
+      "changes": {
+        "title": "Changes to Terms",
+        "content": "We reserve the right to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. Your continued use of the service after such changes constitutes acceptance of the new Terms."
+      },
+      "contact": {
+        "title": "Contact Us",
+        "content": "If you have any questions about these Terms of Service, please contact us through our website."
+      }
+    }
   },
   "language": {
     "en": "English",

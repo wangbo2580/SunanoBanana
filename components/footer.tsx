@@ -1,6 +1,7 @@
 "use client"
 
 import { useTranslations } from "next-intl"
+import Link from "next/link"
 
 export function Footer() {
   const t = useTranslations("footer")
@@ -21,8 +22,22 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>{t("independent")}</p>
+          <div className="mt-8 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">{t("independent")}</p>
+            <div className="flex gap-6 text-sm">
+              <Link
+                href="/privacy"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t("privacy")}
+              </Link>
+              <Link
+                href="/terms"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t("terms")}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
