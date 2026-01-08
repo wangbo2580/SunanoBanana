@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { NextIntlClientProvider } from "next-intl"
 import { getLocale, getMessages } from "next-intl/server"
 import { Header } from "@/components/header"
+import { Toaster } from "sonner"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -50,6 +51,7 @@ export default async function RootLayout({
           <div className="pt-16">
             {children}
           </div>
+          <Toaster richColors position="top-center" />
         </NextIntlClientProvider>
         <Analytics />
       </body>
