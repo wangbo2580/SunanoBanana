@@ -1,6 +1,7 @@
 import { Hero } from "@/components/hero"
 import { Generator } from "@/components/generator"
 import { Features } from "@/components/features"
+import { Pricing } from "@/components/pricing"
 import { FAQ } from "@/components/faq"
 import { Footer } from "@/components/footer"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server"
@@ -20,6 +21,7 @@ export default async function Page() {
       <Hero />
       <Generator user={user} />
       <Features />
+      <Pricing />
       <FAQ />
       <Footer />
     </main>

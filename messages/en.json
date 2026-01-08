@@ -142,7 +142,8 @@
     "copyright": "© 2025 SuMu Nano Banana. All rights reserved.",
     "independent": "SuMu Nano Banana is an independent AI image editor.",
     "privacy": "Privacy Policy",
-    "terms": "Terms of Service"
+    "terms": "Terms of Service",
+    "refund": "Refund Policy"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -201,7 +202,7 @@
       },
       "contact": {
         "title": "Contact Us",
-        "content": "If you have any questions about this Privacy Policy, please contact us through our website."
+        "content": "If you have any questions about this Privacy Policy, please contact us at: support@sumunanobanana.store"
       }
     }
   },
@@ -270,8 +271,106 @@
       },
       "contact": {
         "title": "Contact Us",
-        "content": "If you have any questions about these Terms of Service, please contact us through our website."
+        "content": "If you have any questions about these Terms of Service, please contact us at: support@sumunanobanana.store"
       }
+    }
+  },
+  "refund": {
+    "title": "Refund Policy",
+    "backToHome": "Back to Home",
+    "lastUpdated": "Last Updated",
+    "sections": {
+      "overview": {
+        "title": "Overview",
+        "content": "At SuMu Nano Banana, we strive to ensure your satisfaction with our AI image editing service. This Refund Policy outlines the conditions under which refunds may be requested and processed."
+      },
+      "eligibility": {
+        "title": "Refund Eligibility",
+        "content": "You may be eligible for a refund under the following circumstances:",
+        "items": {
+          "unused": "Subscription cancelled within 7 days of purchase with no credits used.",
+          "technical": "Persistent technical issues that prevent you from using the service, which our support team cannot resolve.",
+          "duplicate": "Duplicate charges or billing errors.",
+          "unauthorized": "Unauthorized charges on your account."
+        }
+      },
+      "nonRefundable": {
+        "title": "Non-Refundable Situations",
+        "content": "Refunds will not be provided in the following cases:",
+        "items": {
+          "used": "Credits have been partially or fully used.",
+          "violation": "Account terminated due to violation of Terms of Service.",
+          "expired": "Refund requested after 30 days from the purchase date."
+        }
+      },
+      "process": {
+        "title": "Refund Process",
+        "content": "To request a refund, please follow these steps:",
+        "items": {
+          "contact": "Contact our support team at support@sumunanobanana.store.",
+          "provide": "Provide your account email, transaction ID, and reason for the refund request.",
+          "review": "Our team will review your request within 3 business days.",
+          "notification": "You will receive an email notification regarding the status of your refund."
+        }
+      },
+      "timeline": {
+        "title": "Refund Timeline",
+        "content": "Once approved, refunds will be processed within 5-10 business days. The refund will be credited to your original payment method. Please note that your bank or payment provider may take additional time to reflect the refund in your account."
+      },
+      "partialRefunds": {
+        "title": "Partial Refunds",
+        "content": "In some cases, partial refunds may be offered based on the remaining unused credits or subscription period. The refund amount will be calculated proportionally."
+      },
+      "cancellation": {
+        "title": "Subscription Cancellation",
+        "content": "You may cancel your subscription at any time. Upon cancellation, you will retain access to your credits until the end of your current billing period. No refund will be provided for the remaining period after cancellation unless eligible under the conditions stated above."
+      },
+      "contact": {
+        "title": "Contact Us",
+        "content": "If you have any questions about our Refund Policy or need to request a refund, please contact us at:"
+      }
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "description": "Choose the plan that fits your creative needs",
+    "mostPopular": "Most Popular",
+    "year": "year",
+    "credits": "credits",
+    "monthlyImages": "high-quality images/month",
+    "getStarted": "Get Started with",
+    "comingSoon": "Coming in October",
+    "comingSoonToast": "Coming Soon",
+    "comingSoonDesc": "Payment integration is being connected. Please stay tuned!",
+    "plans": {
+      "basic": {
+        "name": "Basic",
+        "description": "Perfect for getting started with AI image generation"
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Most popular for professionals and creators"
+      },
+      "max": {
+        "name": "Max",
+        "description": "For power users and businesses with high volume needs"
+      }
+    },
+    "features": {
+      "credits": "credits per year",
+      "images": "high-quality images per month",
+      "basicModels": "Basic AI models",
+      "advancedModels": "Advanced AI models",
+      "standardSupport": "Standard support",
+      "prioritySupport": "Priority support",
+      "commercialLicense": "Commercial license included",
+      "cancelAnytime": "Cancel anytime",
+      "batchGeneration": "Batch generation",
+      "fastestSpeed": "Fastest generation speed",
+      "dedicatedManager": "Dedicated account manager",
+      "priorityQueue": "Priority queue access",
+      "imageEditingTools": "Image editing tools",
+      "professionalEditingSuite": "Professional editing suite"
     }
   },
   "language": {

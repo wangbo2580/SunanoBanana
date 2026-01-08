@@ -142,7 +142,8 @@
     "copyright": "© 2025 SuMu Nano Banana. 保留所有权利。",
     "independent": "SuMu Nano Banana 是一个独立的 AI 图像编辑器。",
     "privacy": "隐私政策",
-    "terms": "服务条款"
+    "terms": "服务条款",
+    "refund": "退款政策"
   },
   "privacy": {
     "title": "隐私政策",
@@ -201,7 +202,7 @@
       },
       "contact": {
         "title": "联系我们",
-        "content": "如果您对本隐私政策有任何疑问，请通过我们的网站与我们联系。"
+        "content": "如果您对本隐私政策有任何疑问，请通过以下邮箱联系我们：support@sumunanobanana.store"
       }
     }
   },
@@ -270,8 +271,106 @@
       },
       "contact": {
         "title": "联系我们",
-        "content": "如果您对本服务条款有任何疑问，请通过我们的网站与我们联系。"
+        "content": "如果您对本服务条款有任何疑问，请通过以下邮箱联系我们：support@sumunanobanana.store"
       }
+    }
+  },
+  "refund": {
+    "title": "退款政策",
+    "backToHome": "返回首页",
+    "lastUpdated": "最后更新",
+    "sections": {
+      "overview": {
+        "title": "概述",
+        "content": "在 SuMu Nano Banana，我们致力于确保您对我们的 AI 图像编辑服务感到满意。本退款政策概述了可以申请和处理退款的条件。"
+      },
+      "eligibility": {
+        "title": "退款资格",
+        "content": "在以下情况下，您可能有资格获得退款：",
+        "items": {
+          "unused": "购买后 7 天内取消订阅且未使用任何积分。",
+          "technical": "持续的技术问题导致您无法使用服务，且我们的支持团队无法解决。",
+          "duplicate": "重复收费或账单错误。",
+          "unauthorized": "您账户上的未授权收费。"
+        }
+      },
+      "nonRefundable": {
+        "title": "不予退款的情况",
+        "content": "以下情况不予退款：",
+        "items": {
+          "used": "积分已部分或全部使用。",
+          "violation": "因违反服务条款而终止的账户。",
+          "expired": "购买日期超过 30 天后申请退款。"
+        }
+      },
+      "process": {
+        "title": "退款流程",
+        "content": "如需申请退款，请按以下步骤操作：",
+        "items": {
+          "contact": "通过 support@sumunanobanana.store 联系我们的支持团队。",
+          "provide": "提供您的账户邮箱、交易 ID 和退款原因。",
+          "review": "我们的团队将在 3 个工作日内审核您的申请。",
+          "notification": "您将收到一封关于退款状态的邮件通知。"
+        }
+      },
+      "timeline": {
+        "title": "退款时间",
+        "content": "一旦批准，退款将在 5-10 个工作日内处理完成。退款将退回到您的原始付款方式。请注意，您的银行或支付服务商可能需要额外的时间才能在您的账户中显示退款。"
+      },
+      "partialRefunds": {
+        "title": "部分退款",
+        "content": "在某些情况下，可能会根据剩余未使用的积分或订阅期限提供部分退款。退款金额将按比例计算。"
+      },
+      "cancellation": {
+        "title": "订阅取消",
+        "content": "您可以随时取消订阅。取消后，您将保留对积分的访问权限，直到当前计费周期结束。除非符合上述条件，否则取消后的剩余期限不予退款。"
+      },
+      "contact": {
+        "title": "联系我们",
+        "content": "如果您对我们的退款政策有任何疑问或需要申请退款，请通过以下方式联系我们："
+      }
+    }
+  },
+  "pricing": {
+    "title": "价格方案",
+    "description": "选择适合您创意需求的方案",
+    "mostPopular": "最受欢迎",
+    "year": "年",
+    "credits": "积分",
+    "monthlyImages": "高质量图片/月",
+    "getStarted": "开始使用",
+    "comingSoon": "10月上线",
+    "comingSoonToast": "即将上线",
+    "comingSoonDesc": "支付功能正在接入中，敬请期待！",
+    "plans": {
+      "basic": {
+        "name": "基础版",
+        "description": "适合刚开始使用 AI 图像生成的用户"
+      },
+      "pro": {
+        "name": "专业版",
+        "description": "最受专业人士和创作者欢迎"
+      },
+      "max": {
+        "name": "旗舰版",
+        "description": "适合高需求的专业用户和企业"
+      }
+    },
+    "features": {
+      "credits": "积分/年",
+      "images": "高质量图片/月",
+      "basicModels": "基础 AI 模型",
+      "advancedModels": "高级 AI 模型",
+      "standardSupport": "标准支持",
+      "prioritySupport": "优先支持",
+      "commercialLicense": "包含商业许可",
+      "cancelAnytime": "随时取消",
+      "batchGeneration": "批量生成",
+      "fastestSpeed": "最快生成速度",
+      "dedicatedManager": "专属客户经理",
+      "priorityQueue": "优先队列访问",
+      "imageEditingTools": "图像编辑工具",
+      "professionalEditingSuite": "专业编辑套件"
     }
   },
   "language": {
