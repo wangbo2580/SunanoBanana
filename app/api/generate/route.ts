@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { createClient } from "@/lib/supabase/server"
 
-const MAX_USAGE = 2
+const MAX_USAGE = 50
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -15,7 +15,6 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. 验证用户身份
     const supabase = await createClient()
     if (!supabase) {
       return NextResponse.json(
@@ -24,20 +23,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { image, prompt, anonymousId } = await request.json()
 
-    if (authError || !user) {
+    if (!anonymousId) {
       return NextResponse.json(
-        { error: "Please login to use this feature", code: "UNAUTHORIZED" },
-        { status: 401 }
+        { error: "Anonymous ID is required", code: "INVALID_REQUEST" },
+        { status: 400 }
       )
     }
 
-    // 2. 检查用户使用次数
+    // 检查用户使用次数
     const { data: existingUsage, error: usageQueryError } = await supabase
       .from("user_usage")
       .select("usage_count")
-      .eq("user_id", user.id)
+      .eq("user_id", anonymousId)
       .single()
 
     let currentUsage = 0
@@ -67,8 +66,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 4. 验证请求参数
-    const { image, prompt } = await request.json()
+    // 验证请求参数
 
     if (!image || !prompt) {
       return NextResponse.json(
@@ -105,7 +103,7 @@ export async function POST(request: NextRequest) {
     const images = (message as any)?.images || []
     const textContent = message?.content || ""
 
-    // 6. 生成成功后，更新使用次数
+    // 生成成功后，更新使用次数
     const newUsageCount = currentUsage + 1
 
     if (existingUsage) {
@@ -113,7 +111,7 @@ export async function POST(request: NextRequest) {
       const { error: updateError } = await supabase
         .from("user_usage")
         .update({ usage_count: newUsageCount })
-        .eq("user_id", user.id)
+        .eq("user_id", anonymousId)
 
       if (updateError) {
         console.error("Usage update error:", updateError)
@@ -122,7 +120,7 @@ export async function POST(request: NextRequest) {
       // 插入新记录
       const { error: insertError } = await supabase
         .from("user_usage")
-        .insert({ user_id: user.id, usage_count: 1 })
+        .insert({ user_id: anonymousId, usage_count: 1 })
 
       if (insertError) {
         console.error("Usage insert error:", insertError)

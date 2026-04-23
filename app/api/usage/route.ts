@@ -1,26 +1,26 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-const MAX_USAGE = 2
+const MAX_USAGE = 50
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     if (!supabase) {
       return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const anonymousId = request.nextUrl.searchParams.get("anonymousId")
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!anonymousId) {
+      return NextResponse.json({ error: "Anonymous ID is required" }, { status: 400 })
     }
 
     // 查询用户使用次数
     const { data: usage, error: usageError } = await supabase
       .from("user_usage")
       .select("usage_count")
-      .eq("user_id", user.id)
+      .eq("user_id", anonymousId)
       .single()
 
     if (usageError && usageError.code !== "PGRST116") {
