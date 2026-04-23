@@ -16,6 +16,34 @@ interface GeneratedImage {
   }
 }
 
+async function compressImage(dataUrl: string, maxWidth = 1200, maxHeight = 1200, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height)
+        width = Math.floor(width * ratio)
+        height = Math.floor(height * ratio)
+      }
+      const canvas = document.createElement("canvas")
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext("2d")
+      if (!ctx) {
+        reject(new Error("Canvas not supported"))
+        return
+      }
+      ctx.fillStyle = "#FFFFFF"
+      ctx.fillRect(0, 0, width, height)
+      ctx.drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL("image/jpeg", quality))
+    }
+    img.onerror = () => reject(new Error("Failed to load image"))
+    img.src = dataUrl
+  })
+}
+
 function getAnonymousId(): string {
   let id = localStorage.getItem("anonymous_id")
   if (!id) {
@@ -103,10 +131,19 @@ export function Generator() {
 
     try {
       const anonymousId = getAnonymousId()
+      // 压缩图片避免 Vercel 4.5MB payload 限制
+      const compressedImage = await compressImage(selectedImage)
+      const compressedReference = referenceImage ? await compressImage(referenceImage) : null
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: selectedImage, prompt: prompt.trim(), anonymousId, referenceImage }),
+        body: JSON.stringify({
+          image: compressedImage,
+          prompt: prompt.trim(),
+          anonymousId,
+          referenceImage: compressedReference,
+        }),
       })
 
       if (!response.ok) {
