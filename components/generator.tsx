@@ -28,6 +28,7 @@ function getAnonymousId(): string {
 export function Generator() {
   const t = useTranslations("generator")
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [referenceImage, setReferenceImage] = useState<string | null>(null)
   const [prompt, setPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([])
@@ -69,6 +70,22 @@ export function Generator() {
     }
   }
 
+  const handleReferenceImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError(t("fileSizeError"))
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setReferenceImage(e.target?.result as string)
+        setError(null)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleGenerate = async () => {
     if (!selectedImage) {
       setError(t("uploadFirst"))
@@ -89,7 +106,7 @@ export function Generator() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: selectedImage, prompt: prompt.trim(), anonymousId }),
+        body: JSON.stringify({ image: selectedImage, prompt: prompt.trim(), anonymousId, referenceImage }),
       })
 
       const data = await response.json()
@@ -131,8 +148,14 @@ export function Generator() {
 
   const clearImage = () => {
     setSelectedImage(null)
+    setReferenceImage(null)
     setGeneratedImages([])
     setResponseText("")
+    setError(null)
+  }
+
+  const clearReferenceImage = () => {
+    setReferenceImage(null)
     setError(null)
   }
 
@@ -221,6 +244,52 @@ export function Generator() {
                     accept="image/*"
                     className="hidden"
                     onChange={handleImageUpload}
+                  />
+                </div>
+
+                {/* 风格/元素参考图（可选） */}
+                <div>
+                  <Label className="text-lg font-semibold mb-4 block">{t("styleReferenceImage")}</Label>
+                  <p className="text-sm text-muted-foreground mb-3">{t("styleReferenceDesc")}</p>
+                  <div
+                    className="relative border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/30"
+                    onClick={() => document.getElementById("reference-image-upload")?.click()}
+                  >
+                    {referenceImage ? (
+                      <>
+                        <img
+                          src={referenceImage}
+                          alt="Reference"
+                          className="max-w-full h-32 mx-auto object-contain rounded"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            clearReferenceImage()
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="space-y-3">
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">{t("uploadStyleReference")}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{t("maxSize")}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    id="reference-image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleReferenceImageUpload}
                   />
                 </div>
 

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { image, prompt, anonymousId } = await request.json()
+    const { image, prompt, anonymousId, referenceImage } = await request.json()
 
     if (!anonymousId) {
       return NextResponse.json(
@@ -76,23 +76,35 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. 调用 AI API
+    const content: any[] = [
+      {
+        type: "image_url",
+        image_url: {
+          url: image, // base64 data URL
+        },
+      },
+    ]
+
+    if (referenceImage) {
+      content.push({
+        type: "image_url",
+        image_url: {
+          url: referenceImage, // base64 data URL
+        },
+      })
+    }
+
+    content.push({
+      type: "text",
+      text: prompt,
+    })
+
     const completion = await openai.chat.completions.create({
       model: "google/gemini-2.5-flash-image",
       messages: [
         {
           role: "user",
-          content: [
-            {
-              type: "text",
-              text: prompt,
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: image, // base64 data URL
-              },
-            },
-          ],
+          content,
         },
       ],
     })
