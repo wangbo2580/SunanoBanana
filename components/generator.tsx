@@ -109,11 +109,19 @@ export function Generator() {
         body: JSON.stringify({ image: selectedImage, prompt: prompt.trim(), anonymousId, referenceImage }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate image")
+        const text = await response.text()
+        let errorMsg = text
+        try {
+          const data = JSON.parse(text)
+          errorMsg = data.error || text
+        } catch {
+          // 返回的不是 JSON，直接使用文本
+        }
+        throw new Error(errorMsg || "Failed to generate image")
       }
+
+      const data = await response.json()
 
       if (data.images && data.images.length > 0) {
         setGeneratedImages(data.images)
