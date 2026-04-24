@@ -56,16 +56,44 @@ async function compositeAnnotatedImage(
 
     const cx = annotation.x * canvas.width
     const cy = annotation.y * canvas.height
-    const radius = Math.max(canvas.width, canvas.height) * 0.035
-    const strokeWidth = Math.max(4, canvas.width * 0.005)
+    const maxDim = Math.max(canvas.width, canvas.height)
+    const outerRadius = maxDim * 0.05
+    const innerFillRadius = outerRadius * 0.72
+    const strokeWidth = Math.max(6, maxDim * 0.0065)
+    const crossLen = outerRadius * 1.55
 
+    // semi-transparent red disc (so content under the mark stays readable)
     ctx.beginPath()
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-    ctx.fillStyle = "rgba(255, 0, 0, 0.35)"
+    ctx.arc(cx, cy, innerFillRadius, 0, Math.PI * 2)
+    ctx.fillStyle = "rgba(255, 0, 0, 0.22)"
     ctx.fill()
+
+    // solid red ring
+    ctx.beginPath()
+    ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2)
     ctx.lineWidth = strokeWidth
-    ctx.strokeStyle = "rgba(235, 0, 0, 1)"
+    ctx.strokeStyle = "rgba(220, 0, 0, 1)"
     ctx.stroke()
+
+    // crosshair — horizontal
+    ctx.beginPath()
+    ctx.moveTo(cx - crossLen, cy)
+    ctx.lineTo(cx + crossLen, cy)
+    ctx.lineWidth = strokeWidth
+    ctx.strokeStyle = "rgba(220, 0, 0, 1)"
+    ctx.stroke()
+
+    // crosshair — vertical
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - crossLen)
+    ctx.lineTo(cx, cy + crossLen)
+    ctx.stroke()
+
+    // tiny solid dot at exact center
+    ctx.beginPath()
+    ctx.arc(cx, cy, strokeWidth, 0, Math.PI * 2)
+    ctx.fillStyle = "rgba(220, 0, 0, 1)"
+    ctx.fill()
 
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
@@ -210,25 +238,26 @@ export function Generator() {
     try {
       const anonymousId = getAnonymousId()
 
-      let effectiveImageUrl = selectedImageUrl
+      let annotatedImageUrl: string | null = null
       if (annotation) {
         const blob = await compositeAnnotatedImage(selectedImageUrl, annotation)
         const file = new File([blob], `annotated-${Date.now()}.png`, {
           type: "image/png",
         })
-        effectiveImageUrl = await uploadImage(file, anonymousId, "annotated")
+        annotatedImageUrl = await uploadImage(file, anonymousId, "annotated")
       }
 
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageUrl: effectiveImageUrl,
+          imageUrl: selectedImageUrl,
+          annotatedImageUrl,
+          annotationPosition: annotation,
           referenceImageUrl,
           prompt: prompt.trim(),
           anonymousId,
           referenceUsage: referenceImageUrl ? referenceUsage : undefined,
-          hasAnnotation: !!annotation,
           upscale: shouldUpscale,
         }),
       })
@@ -381,15 +410,42 @@ export function Generator() {
                           />
                           {annotation && (
                             <div
-                              className="absolute rounded-full bg-red-500/35 border-[3px] border-red-600 pointer-events-none shadow-lg"
+                              className="absolute pointer-events-none"
                               style={{
                                 left: `${annotation.x * 100}%`,
                                 top: `${annotation.y * 100}%`,
-                                width: "36px",
-                                height: "36px",
                                 transform: "translate(-50%, -50%)",
                               }}
-                            />
+                            >
+                              <div
+                                className="rounded-full bg-red-500/25 border-[3px] border-red-600"
+                                style={{ width: "48px", height: "48px" }}
+                              />
+                              <div
+                                className="absolute left-1/2 top-1/2 bg-red-600"
+                                style={{
+                                  width: "64px",
+                                  height: "3px",
+                                  transform: "translate(-50%, -50%)",
+                                }}
+                              />
+                              <div
+                                className="absolute left-1/2 top-1/2 bg-red-600"
+                                style={{
+                                  width: "3px",
+                                  height: "64px",
+                                  transform: "translate(-50%, -50%)",
+                                }}
+                              />
+                              <div
+                                className="absolute left-1/2 top-1/2 bg-red-700 rounded-full"
+                                style={{
+                                  width: "6px",
+                                  height: "6px",
+                                  transform: "translate(-50%, -50%)",
+                                }}
+                              />
+                            </div>
                           )}
                         </div>
                         <Button

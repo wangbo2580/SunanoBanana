@@ -48,11 +48,12 @@ export async function POST(request: NextRequest) {
   try {
     const {
       imageUrl,
+      annotatedImageUrl,
+      annotationPosition,
       referenceImageUrl,
       prompt,
       anonymousId,
       referenceUsage,
-      hasAnnotation,
       upscale: shouldUpscale,
     } = await request.json()
 
@@ -84,19 +85,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 1. 改写 prompt（中译英 + 结构化模板 + 标记位置）
+    // 1. 改写 prompt（中译英 + 结构化模板 + 标记位置 + 参考图用途）
     const usage: ReferenceUsage = (referenceUsage as ReferenceUsage) || "none"
     const refinedPrompt = await rewritePrompt(
       prompt,
       usage,
       !!referenceImageUrl,
-      !!hasAnnotation
+      !!annotatedImageUrl,
+      annotationPosition
     )
 
     // 2. 构造 Gemini 请求
+    // 图片顺序：清洁原图 → 带红色标记的图（如有）→ 参考图（如有）→ 文字
     const content: any[] = [
       { type: "image_url", image_url: { url: imageUrl } },
     ]
+    if (annotatedImageUrl) {
+      content.push({
+        type: "image_url",
+        image_url: { url: annotatedImageUrl },
+      })
+    }
     if (referenceImageUrl) {
       content.push({
         type: "image_url",
