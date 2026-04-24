@@ -7,7 +7,25 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Upload, ImageIcon, Sparkles, Loader2, Download, X, AlertCircle } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import {
+  Upload,
+  ImageIcon,
+  Sparkles,
+  Loader2,
+  Download,
+  X,
+  AlertCircle,
+  Wand2,
+} from "lucide-react"
+import { uploadImage } from "@/lib/supabase/upload-client"
 
 interface GeneratedImage {
   type: string
@@ -16,33 +34,7 @@ interface GeneratedImage {
   }
 }
 
-async function compressImage(dataUrl: string, maxWidth = 1200, maxHeight = 1200, quality = 0.85): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      let { width, height } = img
-      if (width > maxWidth || height > maxHeight) {
-        const ratio = Math.min(maxWidth / width, maxHeight / height)
-        width = Math.floor(width * ratio)
-        height = Math.floor(height * ratio)
-      }
-      const canvas = document.createElement("canvas")
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext("2d")
-      if (!ctx) {
-        reject(new Error("Canvas not supported"))
-        return
-      }
-      ctx.fillStyle = "#FFFFFF"
-      ctx.fillRect(0, 0, width, height)
-      ctx.drawImage(img, 0, 0, width, height)
-      resolve(canvas.toDataURL("image/jpeg", quality))
-    }
-    img.onerror = () => reject(new Error("Failed to load image"))
-    img.src = dataUrl
-  })
-}
+type ReferenceUsage = "add_object" | "style" | "background"
 
 function getAnonymousId(): string {
   let id = localStorage.getItem("anonymous_id")
@@ -55,17 +47,24 @@ function getAnonymousId(): string {
 
 export function Generator() {
   const t = useTranslations("generator")
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [referenceImage, setReferenceImage] = useState<string | null>(null)
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
+  const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(
+    null
+  )
+  const [referenceUsage, setReferenceUsage] =
+    useState<ReferenceUsage>("add_object")
   const [prompt, setPrompt] = useState("")
+  const [shouldUpscale, setShouldUpscale] = useState(false)
+  const [isUploadingMain, setIsUploadingMain] = useState(false)
+  const [isUploadingRef, setIsUploadingRef] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([])
   const [responseText, setResponseText] = useState("")
+  const [refinedPrompt, setRefinedPrompt] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [remaining, setRemaining] = useState<number | null>(null)
   const [isLoadingQuota, setIsLoadingQuota] = useState(false)
 
-  // 获取用户使用额度
   useEffect(() => {
     const anonymousId = getAnonymousId()
     setIsLoadingQuota(true)
@@ -82,40 +81,50 @@ export function Generator() {
 
   const isQuotaExceeded = remaining !== null && remaining <= 0
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0]
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        setError(t("fileSizeError"))
-        return
-      }
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string)
-        setError(null)
-      }
-      reader.readAsDataURL(file)
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      setError(t("fileSizeError"))
+      return
+    }
+    setIsUploadingMain(true)
+    setError(null)
+    try {
+      const url = await uploadImage(file, getAnonymousId(), "main")
+      setSelectedImageUrl(url)
+    } catch (err: any) {
+      setError(err.message || "Upload failed")
+    } finally {
+      setIsUploadingMain(false)
     }
   }
 
-  const handleReferenceImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReferenceImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0]
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        setError(t("fileSizeError"))
-        return
-      }
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setReferenceImage(e.target?.result as string)
-        setError(null)
-      }
-      reader.readAsDataURL(file)
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      setError(t("fileSizeError"))
+      return
+    }
+    setIsUploadingRef(true)
+    setError(null)
+    try {
+      const url = await uploadImage(file, getAnonymousId(), "reference")
+      setReferenceImageUrl(url)
+    } catch (err: any) {
+      setError(err.message || "Upload failed")
+    } finally {
+      setIsUploadingRef(false)
     }
   }
 
   const handleGenerate = async () => {
-    if (!selectedImage) {
+    if (!selectedImageUrl) {
       setError(t("uploadFirst"))
       return
     }
@@ -128,21 +137,20 @@ export function Generator() {
     setError(null)
     setGeneratedImages([])
     setResponseText("")
+    setRefinedPrompt("")
 
     try {
       const anonymousId = getAnonymousId()
-      // 压缩图片避免 Vercel 4.5MB payload 限制
-      const compressedImage = await compressImage(selectedImage)
-      const compressedReference = referenceImage ? await compressImage(referenceImage) : null
-
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          image: compressedImage,
+          imageUrl: selectedImageUrl,
+          referenceImageUrl,
           prompt: prompt.trim(),
           anonymousId,
-          referenceImage: compressedReference,
+          referenceUsage: referenceImageUrl ? referenceUsage : undefined,
+          upscale: shouldUpscale,
         }),
       })
 
@@ -153,7 +161,7 @@ export function Generator() {
           const data = JSON.parse(text)
           errorMsg = data.error || text
         } catch {
-          // 返回的不是 JSON，直接使用文本
+          // not json
         }
         throw new Error(errorMsg || "Failed to generate image")
       }
@@ -166,8 +174,10 @@ export function Generator() {
       if (data.text) {
         setResponseText(data.text)
       }
+      if (data.refinedPrompt) {
+        setRefinedPrompt(data.refinedPrompt)
+      }
 
-      // 更新剩余额度
       if (data.remaining !== undefined) {
         setRemaining(data.remaining)
       }
@@ -186,21 +196,36 @@ export function Generator() {
     const link = document.createElement("a")
     link.href = imageUrl
     link.download = `nano-banana-${Date.now()}-${index}.png`
+    link.target = "_blank"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
   }
 
-  const clearImage = () => {
-    setSelectedImage(null)
-    setReferenceImage(null)
+  const handleContinueEditing = (imgUrl: string) => {
+    setSelectedImageUrl(imgUrl)
+    setReferenceImageUrl(null)
+    setPrompt("")
     setGeneratedImages([])
     setResponseText("")
+    setRefinedPrompt("")
+    setError(null)
+    document
+      .getElementById("generator")
+      ?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  const clearImage = () => {
+    setSelectedImageUrl(null)
+    setReferenceImageUrl(null)
+    setGeneratedImages([])
+    setResponseText("")
+    setRefinedPrompt("")
     setError(null)
   }
 
   const clearReferenceImage = () => {
-    setReferenceImage(null)
+    setReferenceImageUrl(null)
     setError(null)
   }
 
@@ -209,14 +234,15 @@ export function Generator() {
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-5xl font-bold text-balance">{t("title")}</h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-balance">
+              {t("title")}
+            </h2>
             <p className="text-lg text-muted-foreground text-balance">
               {t("description")}
             </p>
           </div>
 
           <Card className="p-8 md:p-12">
-            {/* 额度用尽提示 */}
             {isQuotaExceeded && (
               <div className="mb-8 p-6 bg-destructive/10 border border-destructive/20 rounded-lg">
                 <div className="flex items-start gap-4">
@@ -233,11 +259,12 @@ export function Generator() {
               </div>
             )}
 
-            {/* 剩余额度显示 */}
             {remaining !== null && !isQuotaExceeded && (
               <div className="mb-8 p-4 bg-primary/10 border border-primary/20 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{t("remainingQuota")}</span>
+                  <span className="text-sm font-medium">
+                    {t("remainingQuota")}
+                  </span>
                   <span className="text-lg font-bold text-primary">
                     {remaining} / 50
                   </span>
@@ -249,15 +276,27 @@ export function Generator() {
               {/* Upload Section */}
               <div className="space-y-6">
                 <div>
-                  <Label className="text-lg font-semibold mb-4 block">{t("referenceImage")}</Label>
+                  <Label className="text-lg font-semibold mb-4 block">
+                    {t("referenceImage")}
+                  </Label>
                   <div
                     className="relative border-2 border-dashed rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/30"
-                    onClick={() => document.getElementById("image-upload")?.click()}
+                    onClick={() =>
+                      !isUploadingMain &&
+                      document.getElementById("image-upload")?.click()
+                    }
                   >
-                    {selectedImage ? (
+                    {isUploadingMain ? (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
+                        <p className="text-sm text-muted-foreground">
+                          {t("uploading")}
+                        </p>
+                      </div>
+                    ) : selectedImageUrl ? (
                       <>
                         <img
-                          src={selectedImage}
+                          src={selectedImageUrl}
                           alt="Uploaded"
                           className="max-w-full h-48 mx-auto object-contain rounded"
                         />
@@ -278,7 +317,9 @@ export function Generator() {
                         <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
                         <div>
                           <p className="font-medium">{t("uploadImage")}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{t("maxSize")}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {t("maxSize")}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -292,18 +333,32 @@ export function Generator() {
                   />
                 </div>
 
-                {/* 风格/元素参考图（可选） */}
+                {/* 参考图（可选） */}
                 <div>
-                  <Label className="text-lg font-semibold mb-4 block">{t("styleReferenceImage")}</Label>
-                  <p className="text-sm text-muted-foreground mb-3">{t("styleReferenceDesc")}</p>
+                  <Label className="text-lg font-semibold mb-4 block">
+                    {t("styleReferenceImage")}
+                  </Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {t("styleReferenceDesc")}
+                  </p>
                   <div
                     className="relative border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/30"
-                    onClick={() => document.getElementById("reference-image-upload")?.click()}
+                    onClick={() =>
+                      !isUploadingRef &&
+                      document.getElementById("reference-image-upload")?.click()
+                    }
                   >
-                    {referenceImage ? (
+                    {isUploadingRef ? (
+                      <div className="flex flex-col items-center justify-center py-6">
+                        <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          {t("uploading")}
+                        </p>
+                      </div>
+                    ) : referenceImageUrl ? (
                       <>
                         <img
-                          src={referenceImage}
+                          src={referenceImageUrl}
                           alt="Reference"
                           className="max-w-full h-32 mx-auto object-contain rounded"
                         />
@@ -323,8 +378,12 @@ export function Generator() {
                       <div className="space-y-3">
                         <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
                         <div>
-                          <p className="font-medium text-sm">{t("uploadStyleReference")}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{t("maxSize")}</p>
+                          <p className="font-medium text-sm">
+                            {t("uploadStyleReference")}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {t("maxSize")}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -336,10 +395,42 @@ export function Generator() {
                     className="hidden"
                     onChange={handleReferenceImageUpload}
                   />
+
+                  {referenceImageUrl && (
+                    <div className="mt-3">
+                      <Label className="text-sm font-medium mb-2 block">
+                        {t("referenceUsageLabel")}
+                      </Label>
+                      <Select
+                        value={referenceUsage}
+                        onValueChange={(v) =>
+                          setReferenceUsage(v as ReferenceUsage)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="add_object">
+                            {t("referenceUsageAddObject")}
+                          </SelectItem>
+                          <SelectItem value="style">
+                            {t("referenceUsageStyle")}
+                          </SelectItem>
+                          <SelectItem value="background">
+                            {t("referenceUsageBackground")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <Label htmlFor="prompt" className="text-lg font-semibold mb-4 block">
+                  <Label
+                    htmlFor="prompt"
+                    className="text-lg font-semibold mb-4 block"
+                  >
                     {t("mainPrompt")}
                   </Label>
                   <Textarea
@@ -362,7 +453,14 @@ export function Generator() {
                   className="w-full"
                   size="lg"
                   onClick={handleGenerate}
-                  disabled={isGenerating || !selectedImage || !prompt.trim() || isQuotaExceeded}
+                  disabled={
+                    isGenerating ||
+                    isUploadingMain ||
+                    isUploadingRef ||
+                    !selectedImageUrl ||
+                    !prompt.trim() ||
+                    isQuotaExceeded
+                  }
                 >
                   {isGenerating ? (
                     <>
@@ -381,44 +479,81 @@ export function Generator() {
               {/* Output Section */}
               <div className="space-y-6">
                 <div>
-                  <Label className="text-lg font-semibold mb-4 block">{t("outputGallery")}</Label>
+                  <Label className="text-lg font-semibold mb-4 block">
+                    {t("outputGallery")}
+                  </Label>
                   <div className="border-2 rounded-lg p-6 bg-muted/30 min-h-[300px]">
                     {isGenerating ? (
                       <div className="flex flex-col items-center justify-center h-full min-h-[250px]">
                         <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                        <p className="text-lg font-medium">{t("generatingImage")}</p>
-                        <p className="text-sm text-muted-foreground mt-2">{t("mayTakeMoments")}</p>
+                        <p className="text-lg font-medium">
+                          {t("generatingImage")}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {t("mayTakeMoments")}
+                        </p>
                       </div>
                     ) : generatedImages.length > 0 || responseText ? (
                       <div className="space-y-4">
                         {generatedImages.map((img, index) => (
-                          <div key={index} className="relative group">
-                            <img
-                              src={img.image_url.url}
-                              alt={`Generated ${index + 1}`}
-                              className="w-full rounded-lg shadow-lg"
-                            />
+                          <div key={index} className="space-y-2">
+                            <div className="relative group">
+                              <img
+                                src={img.image_url.url}
+                                alt={`Generated ${index + 1}`}
+                                className="w-full rounded-lg shadow-lg"
+                              />
+                              <Button
+                                size="sm"
+                                className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() =>
+                                  handleDownload(img.image_url.url, index)
+                                }
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                {t("download")}
+                              </Button>
+                            </div>
                             <Button
+                              variant="outline"
                               size="sm"
-                              className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleDownload(img.image_url.url, index)}
+                              className="w-full"
+                              onClick={() =>
+                                handleContinueEditing(img.image_url.url)
+                              }
                             >
-                              <Download className="w-4 h-4 mr-2" />
-                              {t("download")}
+                              <Wand2 className="w-4 h-4 mr-2" />
+                              {t("continueEditing")}
                             </Button>
                           </div>
                         ))}
+                        {refinedPrompt && (
+                          <details className="p-3 bg-background rounded-lg border text-xs">
+                            <summary className="cursor-pointer font-medium">
+                              {t("refinedPromptLabel")}
+                            </summary>
+                            <p className="text-muted-foreground mt-2 whitespace-pre-wrap">
+                              {refinedPrompt}
+                            </p>
+                          </details>
+                        )}
                         {responseText && (
                           <div className="p-4 bg-background rounded-lg border">
-                            <p className="text-sm text-muted-foreground">{responseText}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {responseText}
+                            </p>
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full min-h-[250px]">
                         <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                        <p className="text-lg font-medium">{t("creationsAppear")}</p>
-                        <p className="text-sm text-muted-foreground mt-2">{t("readyForGeneration")}</p>
+                        <p className="text-lg font-medium">
+                          {t("creationsAppear")}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {t("readyForGeneration")}
+                        </p>
                       </div>
                     )}
                   </div>

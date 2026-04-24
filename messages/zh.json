@@ -38,7 +38,16 @@
     "loginWithGoogle": "使用 Google 登录",
     "quotaExceeded": "额度已用完",
     "quotaExceededDesc": "您的免费额度已用完（2/2）。感谢您试用 SuMu Nano Banana！",
-    "remainingQuota": "剩余额度"
+    "remainingQuota": "剩余额度",
+    "uploading": "上传中...",
+    "continueEditing": "基于此图继续编辑",
+    "refinedPromptLabel": "查看实际发送给模型的提示词",
+    "referenceUsageLabel": "参考图的用途",
+    "referenceUsageAddObject": "把参考图中的物体加入主图",
+    "referenceUsageStyle": "将参考图的风格应用到主图",
+    "referenceUsageBackground": "用参考图作为新背景",
+    "upscaleLabel": "4 倍高清化（Real-ESRGAN）",
+    "upscaleDesc": "额外 3-8 秒，输出更锐利、更高分辨率"
   },
   "features": {
     "title": "核心功能",

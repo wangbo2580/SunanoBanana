@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
+import { rewritePrompt, type ReferenceUsage } from "@/lib/prompt-template"
+import { uploadDataUrlToStorage } from "@/lib/supabase/storage"
+
+export const maxDuration = 60
 
 const MAX_USAGE = 50
 
@@ -15,9 +19,41 @@ const openai = new OpenAI({
   },
 })
 
+async function upscaleWithRealEsrgan(imageUrl: string): Promise<string> {
+  const falKey = process.env.FAL_KEY
+  if (!falKey) {
+    throw new Error("FAL_KEY not configured")
+  }
+  const res = await fetch("https://fal.run/fal-ai/real-esrgan", {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${falKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      image_url: imageUrl,
+      scale: 4,
+      face_enhance: false,
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Real-ESRGAN failed: ${res.status} ${text}`)
+  }
+  const data = await res.json()
+  return data?.image?.url || imageUrl
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { image, prompt, anonymousId, referenceImage } = await request.json()
+    const {
+      imageUrl,
+      referenceImageUrl,
+      prompt,
+      anonymousId,
+      referenceUsage,
+      upscale: shouldUpscale,
+    } = await request.json()
 
     if (!anonymousId) {
       return NextResponse.json(
@@ -26,9 +62,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 检查用户使用次数
     const currentUsage = usageMap.get(anonymousId) ?? 0
-
     if (currentUsage >= MAX_USAGE) {
       return NextResponse.json(
         {
@@ -36,43 +70,38 @@ export async function POST(request: NextRequest) {
           code: "QUOTA_EXCEEDED",
           usage_count: currentUsage,
           max_usage: MAX_USAGE,
-          remaining: 0
+          remaining: 0,
         },
         { status: 403 }
       )
     }
 
-    // 验证请求参数
-    if (!image || !prompt) {
+    if (!imageUrl || !prompt) {
       return NextResponse.json(
         { error: "Image and prompt are required", code: "INVALID_REQUEST" },
         { status: 400 }
       )
     }
 
-    // 调用 AI API
-    const content: any[] = [
-      {
-        type: "image_url",
-        image_url: {
-          url: image, // base64 data URL
-        },
-      },
-    ]
+    // 1. 改写 prompt（中译英 + 结构化模板）
+    const usage: ReferenceUsage = (referenceUsage as ReferenceUsage) || "none"
+    const refinedPrompt = await rewritePrompt(
+      prompt,
+      usage,
+      !!referenceImageUrl
+    )
 
-    if (referenceImage) {
+    // 2. 构造 Gemini 请求
+    const content: any[] = [
+      { type: "image_url", image_url: { url: imageUrl } },
+    ]
+    if (referenceImageUrl) {
       content.push({
         type: "image_url",
-        image_url: {
-          url: referenceImage, // base64 data URL
-        },
+        image_url: { url: referenceImageUrl },
       })
     }
-
-    content.push({
-      type: "text",
-      text: prompt,
-    })
+    content.push({ type: "text", text: refinedPrompt })
 
     const completion = await openai.chat.completions.create({
       model: "google/gemini-2.5-flash-image",
@@ -85,27 +114,59 @@ export async function POST(request: NextRequest) {
     })
 
     const message = completion.choices[0]?.message
-
-    // Extract generated images from the response
-    const images = (message as any)?.images || []
+    const rawImages: any[] = (message as any)?.images || []
     const textContent = message?.content || ""
 
-    // 生成成功后，更新使用次数
+    // 3. 输出图落到 Storage（data URL → public URL），可选调用 Real-ESRGAN
+    const processedImages: any[] = []
+    for (let i = 0; i < rawImages.length; i++) {
+      const img = rawImages[i]
+      const url: string | undefined = img?.image_url?.url
+      if (!url) continue
+
+      let finalUrl = url
+      try {
+        if (url.startsWith("data:")) {
+          const path = `outputs/${anonymousId}/${Date.now()}-${i}.png`
+          finalUrl = await uploadDataUrlToStorage(url, path)
+        }
+      } catch (e) {
+        console.error("Output upload failed, returning original URL:", e)
+      }
+
+      if (shouldUpscale && finalUrl.startsWith("http")) {
+        try {
+          finalUrl = await upscaleWithRealEsrgan(finalUrl)
+        } catch (e) {
+          console.error("Upscale failed, keeping non-upscaled output:", e)
+        }
+      }
+
+      processedImages.push({
+        type: "image_url",
+        image_url: { url: finalUrl },
+      })
+    }
+
     const newUsageCount = currentUsage + 1
     usageMap.set(anonymousId, newUsageCount)
 
     return NextResponse.json({
       success: true,
-      images: images,
+      images: processedImages,
       text: textContent,
+      refinedPrompt,
       usage_count: newUsageCount,
       max_usage: MAX_USAGE,
-      remaining: MAX_USAGE - newUsageCount
+      remaining: MAX_USAGE - newUsageCount,
     })
   } catch (error: any) {
     console.error("API Error:", error)
     return NextResponse.json(
-      { error: error.message || "Failed to generate image", code: "GENERATION_FAILED" },
+      {
+        error: error.message || "Failed to generate image",
+        code: "GENERATION_FAILED",
+      },
       { status: 500 }
     )
   }

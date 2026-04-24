@@ -38,7 +38,16 @@
     "loginWithGoogle": "Login with Google",
     "quotaExceeded": "Quota Exceeded",
     "quotaExceededDesc": "Your free quota has been used up (2/2). Thank you for trying SuMu Nano Banana!",
-    "remainingQuota": "Remaining Quota"
+    "remainingQuota": "Remaining Quota",
+    "uploading": "Uploading...",
+    "continueEditing": "Continue editing this image",
+    "refinedPromptLabel": "View the refined prompt sent to the model",
+    "referenceUsageLabel": "How to use this reference image",
+    "referenceUsageAddObject": "Add the object/element into the main image",
+    "referenceUsageStyle": "Apply its style to the main image",
+    "referenceUsageBackground": "Use it as the new background",
+    "upscaleLabel": "4× Upscale (Real-ESRGAN)",
+    "upscaleDesc": "Adds 3-8s. Produces a sharper, higher-resolution output."
   },
   "features": {
     "title": "Core Features",
