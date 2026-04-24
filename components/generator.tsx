@@ -31,42 +31,54 @@ async function compositeAnnotatedImage(
   imageUrl: string,
   annotation: { x: number; y: number }
 ): Promise<Blob> {
-  const img = new Image()
-  img.crossOrigin = "anonymous"
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve()
-    img.onerror = () => reject(new Error("Failed to load image for compositing"))
-    img.src = imageUrl
-  })
-  const canvas = document.createElement("canvas")
-  canvas.width = img.naturalWidth
-  canvas.height = img.naturalHeight
-  const ctx = canvas.getContext("2d")
-  if (!ctx) throw new Error("Canvas 2D context not available")
-  ctx.drawImage(img, 0, 0)
+  const response = await fetch(imageUrl, { mode: "cors", cache: "reload" })
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`)
+  }
+  const sourceBlob = await response.blob()
+  const blobUrl = URL.createObjectURL(sourceBlob)
 
-  const cx = annotation.x * canvas.width
-  const cy = annotation.y * canvas.height
-  const radius = Math.max(canvas.width, canvas.height) * 0.035
-  const strokeWidth = Math.max(4, canvas.width * 0.005)
+  try {
+    const img = new Image()
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () =>
+        reject(new Error("Failed to decode image for compositing"))
+      img.src = blobUrl
+    })
 
-  ctx.beginPath()
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-  ctx.fillStyle = "rgba(255, 0, 0, 0.35)"
-  ctx.fill()
-  ctx.lineWidth = strokeWidth
-  ctx.strokeStyle = "rgba(235, 0, 0, 1)"
-  ctx.stroke()
+    const canvas = document.createElement("canvas")
+    canvas.width = img.naturalWidth
+    canvas.height = img.naturalHeight
+    const ctx = canvas.getContext("2d")
+    if (!ctx) throw new Error("Canvas 2D context not available")
+    ctx.drawImage(img, 0, 0)
 
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob)
-        else reject(new Error("Canvas toBlob returned null"))
-      },
-      "image/png"
-    )
-  })
+    const cx = annotation.x * canvas.width
+    const cy = annotation.y * canvas.height
+    const radius = Math.max(canvas.width, canvas.height) * 0.035
+    const strokeWidth = Math.max(4, canvas.width * 0.005)
+
+    ctx.beginPath()
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+    ctx.fillStyle = "rgba(255, 0, 0, 0.35)"
+    ctx.fill()
+    ctx.lineWidth = strokeWidth
+    ctx.strokeStyle = "rgba(235, 0, 0, 1)"
+    ctx.stroke()
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob)
+          else reject(new Error("Canvas toBlob returned null"))
+        },
+        "image/png"
+      )
+    })
+  } finally {
+    URL.revokeObjectURL(blobUrl)
+  }
 }
 
 interface GeneratedImage {
