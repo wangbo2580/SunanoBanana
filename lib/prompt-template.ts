@@ -1,139 +1,92 @@
-import OpenAI from "openai"
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": "https://nano-banana.vercel.app",
-    "X-Title": "Nano Banana AI Image Editor",
-  },
-})
+// Prompt 构造器：纯字符串拼接，不调用任何 LLM。
+// 设计原则：
+//   - 用户原话原样透传（任何语言），绝不翻译 / 改写 / 扩写
+//   - 仅附加结构化上下文（图 #1/#2 是什么、Preservation/Integration/Output 约定）
+//   - 现代图像模型（Gemini、Seedream、FLUX 等）原生多语言，中文无需中转
 
 export type ReferenceUsage = "add_object" | "style" | "background" | "none"
 
 export type AnnotationPosition = { x: number; y: number } | null | undefined
 
-const SYSTEM_PROMPT = `You translate a user's image-edit request into clean, structured English for an image-editing model. You are NOT a creative writer. You are a faithful translator and light structurer.
-
-ABSOLUTELY FORBIDDEN:
-- Inventing scene elements the user didn't mention (no "building entrance" when they said "wall"; no invented doors/windows/sky).
-- Inventing measurements (no "1.5 meters", "approximately X feet").
-- Inventing materials (no "brushed silver metal", "acrylic", "wood") unless the user wrote it.
-- Inventing colors, lighting effects, or moods (no "warm glow", "softly lit", "glossy") unless the user wrote it.
-- Inventing existing objects in the scene (no "the existing arrow", "the existing text") unless the user wrote about an existing thing.
-- Swapping direction words. 右=right, 左=left, 右上=upper-right, 左下=lower-left. Never flip.
-- Swapping operation verbs. See operation mapping below — ALWAYS preserve the user's operation.
-- Swapping the user's OBJECT. If they say "the lantern" (灯笼), you write "lantern" — never substitute a different object like "arrow" or "sign".
-- Expanding one-sentence requests into paragraphs of fabricated detail.
-
-OPERATION MAPPING (binding — must be preserved exactly):
-- 加 / 添加 / add                     → "add [object] at [location]"
-- 移动 / 挪 / 换位置 / move           → "MOVE the existing [object] from its current position to [new location]. The original must be removed from its original spot — it must NOT appear in both places."
-- 去掉 / 删除 / 移除 / remove         → "remove the existing [object]"
-- 换成 / 改成 / 替换 / replace         → "replace the existing [object] with [new thing]"
-- 缩小 / 放大 / 调整大小 / resize      → "shrink / enlarge the existing [object] by [amount if specified]"
-- 旋转 / rotate                        → "rotate the existing [object]"
-- 改颜色 / 变色                        → "recolor the existing [object] to [color]"
-
-"图上的 X" / "原图的 X" / "existing X" ALL mean an object already in the image. Never replace with a new object of a different kind.
-
-ALLOWED:
-- Translating Chinese/other languages to English literally.
-- Minor grammar cleanup.
-- Wrapping the user's literal intent in the structure below.
-- Describing a visible reference image's existing properties ONLY when a context hint block later in this system prompt explicitly tells you to do so.
-
-OUTPUT STRUCTURE (exactly four lines):
-
-Task: <faithful description preserving the user's operation verb AND their object. If the user gave multiple steps, list each step. Include location/position words exactly as user wrote them.>
-Preservation: Keep the original composition, subject, lighting direction, perspective, and every unrelated element completely unchanged.
-Integration: Render the edit with natural lighting, shadows, and perspective matching the existing scene.
-Output: A single photorealistic image, high detail, sharp focus.
-
-Output ONLY those four lines. No preamble, no explanations, no code fences.`
-
-// 严格翻译模式：composer 流程下用户已通过拖拽参考图表达了完整意图，
-// 改写器不应扩写 / 脑补细节，只做必要的中译英 + 固定结尾说明。
-const COMPOSER_SYSTEM_PROMPT = `You translate a user's short image-edit request into English for a downstream image editing model that will see TWO images (Image #1: clean scene; Image #2: user-placed mockup).
-
-STRICT RULES:
-- If the user writes in Chinese or another language, translate to clean, literal English.
-- If the user already writes in English, copy their words verbatim (only fix grammar if needed).
-- NEVER invent, embellish, or add details the user did not write. Forbidden: inventing measurements, materials (e.g. "brushed silver", "acrylic"), colors, lighting effects (e.g. "warm glow"), environment elements (e.g. "building entrance") that are not in the user's text.
-- Preserve direction words EXACTLY (右 → right, 左 → left, 右上 → upper-right, 上 → top, 下 → bottom). Never swap.
-- Preserve the user's length: if they wrote one short sentence, output one short sentence.
-
-OUTPUT FORMAT (exactly two parts, separated by a blank line):
-
-<translated user request, faithful, no additions>
-
-Use Image #1 as the final base scene. Image #2 is a user-placed mockup — preserve the mockup element's design (shape, material, text, 3D form / mounting) but RE-RENDER it into Image #1 with natural lighting, shadows, and perspective. The mockup's position and size are approximate hints; adjust slightly for aesthetic coherence and real-world scale, but stay within the same general region the user indicated.
-
-Do NOT add anything else. No preamble, no headers, no explanations.`
-
-const COMPOSER_FALLBACK_SUFFIX = `
-
-Use Image #1 as the final base scene. Image #2 is a user-placed mockup — preserve the mockup element's design (shape, material, text, 3D form / mounting) but re-render it into Image #1 with natural lighting, shadows, and perspective. The mockup's position and size are approximate hints; adjust slightly for aesthetic coherence and real-world scale.`
-
-function referenceHint(
-  hasReferenceImage: boolean,
-  usage: ReferenceUsage,
-  referenceImageIndex: number
-): string {
-  if (!hasReferenceImage || usage === "none") return ""
-  const idx = referenceImageIndex // 1-based for human readability
-  if (usage === "add_object") {
-    return `
-
-Context: Image #${idx} is a REFERENCE OBJECT to insert into the main scene.
-Your rewritten instruction MUST emphasize strict fidelity to the reference:
-- Copy the reference object LITERALLY. Preserve its exact 3D form, shape, silhouette, orientation, mounting style, material, texture, color palette, and any text content character-for-character.
-- If the reference object is side-mounted, protruding, or hanging from a wall (e.g. a 侧招 / projecting shop sign / banner / flag), it MUST be rendered side-mounted / protruding / hanging in the output — do NOT flatten it into a wall-mounted plaque or poster.
-- If the reference has a distinctive shape (arrow, pennant, circular disc, lantern, hexagon, etc.), preserve that shape exactly.
-- Size the object naturally for the main scene (match the apparent scale of nearby real-world objects), but do NOT alter the object's internal proportions.
-- Do NOT redesign, reinterpret, simplify, or stylize. Treat the reference image as a literal source to copy.`
-  }
-  if (usage === "style") {
-    return `
-
-Context: Image #${idx} is a STYLE REFERENCE. Apply its color palette, lighting mood, and texture quality to the main image while keeping the main subject's content and composition recognizable.`
-  }
-  if (usage === "background") {
-    return `
-
-Context: Image #${idx} is a BACKGROUND REFERENCE. Replace the main image's background with the scene from this reference. Keep the main subject intact and relight it to match the new background's direction and color temperature.`
-  }
-  return ""
+interface BuildParams {
+  hasReferenceImage: boolean
+  usage: ReferenceUsage
+  hasAnnotation: boolean
+  annotationPosition: AnnotationPosition
+  isPreComposited: boolean
 }
 
+function buildContextBlock(params: BuildParams): string {
+  const {
+    hasReferenceImage,
+    usage,
+    hasAnnotation,
+    annotationPosition,
+    isPreComposited,
+  } = params
 
-function annotationHint(
-  hasAnnotation: boolean,
-  position: AnnotationPosition
-): string {
-  if (!hasAnnotation) return ""
-  const xPct = position ? Math.round(position.x * 100) : null
-  const yPct = position ? Math.round(position.y * 100) : null
-  const coordPhrase =
-    xPct !== null && yPct !== null
-      ? `approximately ${xPct}% from the left edge and ${yPct}% from the top edge of the image`
-      : `at the red crosshair marker`
+  // 预合成模式：清洁原图 + 用户合成 mockup
+  if (isPreComposited) {
+    return `Context: Two images are provided.
+Image #1 is the CLEAN base scene — this is the canvas for the final output.
+Image #2 is a USER MOCKUP: the user manually placed a reference element onto the scene to communicate three things:
+- WHAT the element is — its design, shape, silhouette, material, texture, color palette, any text content, and 3D form / mounting style. These are BINDING requirements: preserve them.
+- WHERE they roughly want it — position is an approximate HINT; you may adjust slightly for aesthetic coherence, but stay in the same general region the user indicated.
+- HOW BIG they roughly want it — size is an approximate HINT; you may adjust for real-world scale proportional to adjacent objects in the scene.
 
-  return `
+Re-render the element naturally into Image #1 with matching lighting, shadows, and perspective. Do NOT paste pixels from Image #2; redraw the element as if it were physically present in the scene.`
+  }
 
-Context: TWO images of the main scene are provided.
-- Image #1: the CLEAN base scene (no marker, untouched). This is the canvas the final output must be based on.
-- Image #2: the SAME scene with a large red circular ring and red crosshair drawn on top. The crosshair center is a positional guide placed by the user — it is NOT part of the scene.
+  const blocks: string[] = []
 
-The crosshair center is located ${coordPhrase}.
+  // 标记模式：清洁原图 + 带红色十字准心的副本 + 坐标
+  if (hasAnnotation) {
+    const xPct =
+      annotationPosition && typeof annotationPosition.x === "number"
+        ? Math.round(annotationPosition.x * 100)
+        : null
+    const yPct =
+      annotationPosition && typeof annotationPosition.y === "number"
+        ? Math.round(annotationPosition.y * 100)
+        : null
+    const coord =
+      xPct !== null && yPct !== null
+        ? ` is located approximately ${xPct}% from the left edge and ${yPct}% from the top edge of the image`
+        : ""
 
-Your rewritten instruction MUST:
-1. Command the model to produce the final edit on top of Image #1 (the clean version). The final output must NOT contain the red ring, crosshair, or any marker.
-2. Apply the edit at the EXACT location of the crosshair center — ${coordPhrase}. The position is binding. Do NOT center the edit, do NOT reposition it to a "more natural" location, do NOT average across nearby points. If the user marked the upper-right, the edit goes to the upper-right; if they marked a corner, the edit goes to that corner.
-3. Reiterate the position using BOTH wording: "at the position indicated by the user's red crosshair marker in Image #2" AND the numeric coordinate "${coordPhrase}".
-4. Every pixel outside the edit region must remain pixel-identical to Image #1.`
+    blocks.push(`Context: Two versions of the scene are provided.
+Image #1 is the CLEAN base scene — the final output canvas.
+Image #2 is the same scene with a red circular ring and red crosshair drawn on top. The crosshair center${coord}. This marker is a positional guide placed by the user; it is NOT part of the scene.
+
+The user's requested edit must be applied at the crosshair center on Image #1. The final output must contain no trace of the red ring or crosshair. Do not center, relocate, or "improve" the placement.`)
+  }
+
+  // 参考图模式
+  if (hasReferenceImage) {
+    const refN = hasAnnotation ? 3 : 2
+    if (usage === "add_object") {
+      blocks.push(`Context: Image #${refN} is a REFERENCE showing the object/element the user wants to add.
+Preserve its design faithfully: shape, silhouette, material, texture, color palette, any text content verbatim, and its 3D form / mounting style. If the reference depicts a projecting / side-mounted / hanging / arrow-shaped / pennant / lantern / curtain / etc. object, render it with that same 3D form in the output — do NOT flatten a protruding sign into a flat wall plaque, do NOT simplify a compound shape into a generic one.`)
+    } else if (usage === "style") {
+      blocks.push(`Context: Image #${refN} is a STYLE REFERENCE. Apply its color palette, lighting mood, and texture quality to the main scene while keeping the main subject's content and composition recognizable.`)
+    } else if (usage === "background") {
+      blocks.push(`Context: Image #${refN} is a BACKGROUND REFERENCE. Replace the main image's background with the scene from this reference. Keep the main subject intact and relight it to match the new background's direction and color temperature.`)
+    }
+  }
+
+  return blocks.join("\n\n")
 }
 
+const STRUCTURAL_WRAPPER = `Preservation: Keep the original composition, subject, lighting direction, perspective, and every element not mentioned in the user's request completely unchanged.
+Integration: Render any edit with natural lighting, accurate shadows, correct perspective, and color grading matching the existing scene. The result should look like a single photograph, not a composite.
+Output: A single photorealistic image, high detail, sharp focus.`
+
+/**
+ * 构造发给图像模型的完整 prompt。
+ *
+ * 用户原话（中文 / 英文 / 任意语言）会被原样放置，不做任何翻译或改写。
+ * 上下文 block 和结构化后缀都是固定英文模板，通过 flags 条件装配。
+ */
 export async function rewritePrompt(
   userPrompt: string,
   usage: ReferenceUsage = "none",
@@ -142,40 +95,17 @@ export async function rewritePrompt(
   annotationPosition: AnnotationPosition = null,
   isPreComposited: boolean = false
 ): Promise<string> {
-  // Image ordering passed to the image model:
-  //   1 = clean base image (or pre-composited image)
-  //   2 = annotated image (if hasAnnotation)
-  //   next = reference image (if hasReferenceImage and not pre-composited)
-  const referenceImageIndex = 1 + (hasAnnotation ? 1 : 0) + 1
+  const context = buildContextBlock({
+    hasReferenceImage,
+    usage,
+    hasAnnotation,
+    annotationPosition,
+    isPreComposited,
+  })
 
-  // Composer 模式走极简翻译（避免脑补细节）；其他模式走结构化改写
-  const systemContent = isPreComposited
-    ? COMPOSER_SYSTEM_PROMPT
-    : SYSTEM_PROMPT +
-      annotationHint(hasAnnotation, annotationPosition) +
-      referenceHint(hasReferenceImage, usage, referenceImageIndex)
+  const userBlock = `User's edit request (use verbatim as the authoritative intent):\n${userPrompt.trim()}`
 
-  const temperature = 0.1
-  const maxTokens = isPreComposited ? 400 : 500
-  const fallback = isPreComposited
-    ? userPrompt + COMPOSER_FALLBACK_SUFFIX
-    : userPrompt
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemContent },
-        { role: "user", content: userPrompt },
-      ],
-      temperature,
-      max_tokens: maxTokens,
-    })
-
-    const rewritten = completion.choices[0]?.message?.content?.trim()
-    return rewritten && rewritten.length > 10 ? rewritten : fallback
-  } catch (err) {
-    console.error("Prompt rewrite failed, falling back to original:", err)
-    return fallback
-  }
+  return [context, userBlock, STRUCTURAL_WRAPPER]
+    .filter((s) => s.length > 0)
+    .join("\n\n")
 }
