@@ -51,7 +51,9 @@
     "annotateHint": "Click anywhere on the image to mark where to apply the edit",
     "annotateMarked": "Position marked — the edit will be applied here. Click again to move, or clear.",
     "annotateClear": "Clear mark",
-    "composerHint": "Drag the reference to hint position, blue corner to hint size. The reference's design (shape, material, text) is binding; position and size are hints — the model will adjust for aesthetic integration."
+    "composerHint": "Drag the reference to hint position, blue corner to hint size. The reference's design (shape, material, text) is binding; position and size are hints — the model will adjust for aesthetic integration.",
+    "composerToggleLabel": "Drag-to-position reference",
+    "composerToggleDesc": "On: drag the reference onto the main image as a position/size hint. Off: the model picks placement freely."
   },
   "features": {
     "title": "Core Features",

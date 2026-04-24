@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import {
   Upload,
   ImageIcon,
@@ -150,6 +151,7 @@ export function Generator() {
     yPct: 0.5,
     widthPct: 0.25,
   })
+  const [useComposerPlacement, setUseComposerPlacement] = useState(true)
 
   // 当参考图变化时重置浮层位置
   useEffect(() => {
@@ -158,11 +160,12 @@ export function Generator() {
     }
   }, [referenceImageUrl])
 
-  // 切到 style / background 时不需要合成
-  const showComposer =
+  // 仅当 (主图 + 参考图 + 用途=加物体 + 用户开启了"拖拽定位") 时才进入合成器
+  const composerEligible =
     !!selectedImageUrl &&
     !!referenceImageUrl &&
     referenceUsage === "add_object"
+  const showComposer = composerEligible && useComposerPlacement
   const [isUploadingMain, setIsUploadingMain] = useState(false)
   const [isUploadingRef, setIsUploadingRef] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -431,6 +434,27 @@ export function Generator() {
                   <Label className="text-lg font-semibold mb-4 block">
                     {t("referenceImage")}
                   </Label>
+                  {composerEligible && (
+                    <div className="flex items-center justify-between p-3 mb-3 border rounded-lg bg-muted/30">
+                      <div className="flex-1">
+                        <Label
+                          htmlFor="composer-toggle"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          {t("composerToggleLabel")}
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t("composerToggleDesc")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="composer-toggle"
+                        checked={useComposerPlacement}
+                        onCheckedChange={setUseComposerPlacement}
+                        disabled={isGenerating}
+                      />
+                    </div>
+                  )}
                   {isUploadingMain ? (
                     <div className="relative border-2 border-dashed rounded-lg p-12 text-center bg-muted/30">
                       <div className="flex flex-col items-center justify-center py-8">
