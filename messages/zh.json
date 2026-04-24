@@ -50,7 +50,8 @@
     "upscaleDesc": "额外 3-8 秒，输出更锐利、更高分辨率",
     "annotateHint": "点击图片标记你想编辑的位置",
     "annotateMarked": "已标记位置。再次点击可移动，或点清除。",
-    "annotateClear": "清除标记"
+    "annotateClear": "清除标记",
+    "composerHint": "拖动参考图暗示位置，拖右下蓝点暗示大小。参考图的设计（形状/材质/文字）是强约束，位置和大小是提示——模型会为审美协调做微调。"
   },
   "features": {
     "title": "核心功能",

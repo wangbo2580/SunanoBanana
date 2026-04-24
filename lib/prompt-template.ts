@@ -60,6 +60,30 @@ Context: Image #${idx} is a BACKGROUND REFERENCE. Replace the main image's backg
   return ""
 }
 
+function precompositedHint(isPreComposited: boolean): string {
+  if (!isPreComposited) return ""
+  return `
+
+Context: TWO images are provided.
+- Image #1 is the CLEAN base scene — this is the foundation for the final output.
+- Image #2 is a USER MOCKUP where the user has placed a reference element onto the scene. The mockup communicates three things:
+  * WHAT element the user wants (design, style, shape, material — binding)
+  * WHERE they roughly want it (position — treat as an approximate hint, not a strict constraint)
+  * HOW BIG they roughly want it (size — treat as an approximate hint, not a strict constraint)
+
+Your rewritten instruction MUST:
+1. Produce the final output based on Image #1 (the clean scene). Re-render the user's desired element naturally into the scene — do NOT paste or copy pixels from the mockup.
+2. PRESERVE from the mockup (these are requirements, not hints):
+   - The element's design: shape, silhouette, material, texture, color palette, any text content verbatim.
+   - The element's 3D form and mounting style: if the mockup shows a side-mounted / protruding / hanging sign, render it side-mounted / protruding / hanging in the output (do NOT flatten into a wall-mounted plaque).
+3. TREAT AS HINTS (model has aesthetic discretion):
+   - Exact position: use the mockup's placement as a starting point, but the model may adjust slightly for a more natural, aesthetically balanced composition within the scene. Stay roughly in the same region the user indicated — do not drastically relocate (e.g. upper-right → lower-left is forbidden, but upper-right → slightly-more-centered-upper-right is allowed).
+   - Exact size: the mockup size may look oversized or undersized compared to real-world scale. Adjust to match the apparent scale of adjacent real-world objects in the scene (e.g., a shop sign should be proportional to the door/wall it's near).
+4. Render with full photographic integration: accurate shadows matching the scene's existing light direction and intensity, matching color grading and ambient light, correct perspective for where the element sits in 3D space, clean edges that do NOT show any pasted-in artifacts.
+5. Preserve the clean scene (Image #1) as close to pixel-identical as possible outside the region occupied by the added element.
+6. Output should look like the element was physically present in the scene when photographed — not a composite, not a mockup, not a paste job. Aesthetically coherent with the scene's mood.`
+}
+
 function annotationHint(
   hasAnnotation: boolean,
   position: AnnotationPosition
@@ -92,25 +116,28 @@ export async function rewritePrompt(
   usage: ReferenceUsage = "none",
   hasReferenceImage: boolean = false,
   hasAnnotation: boolean = false,
-  annotationPosition: AnnotationPosition = null
+  annotationPosition: AnnotationPosition = null,
+  isPreComposited: boolean = false
 ): Promise<string> {
-  // Image ordering passed to Gemini:
-  //   1 = clean base image
+  // Image ordering passed to the image model:
+  //   1 = clean base image (or pre-composited image)
   //   2 = annotated image (if hasAnnotation)
-  //   next = reference image (if hasReferenceImage)
-  const referenceImageIndex = 1 + (hasAnnotation ? 1 : 0) + 1 // 1-based position of reference in content
+  //   next = reference image (if hasReferenceImage and not pre-composited)
+  const referenceImageIndex = 1 + (hasAnnotation ? 1 : 0) + 1
+
+  // In pre-composited mode, annotation and reference hints are irrelevant —
+  // the user has already done positioning manually.
+  const systemContent = isPreComposited
+    ? SYSTEM_PROMPT + precompositedHint(true)
+    : SYSTEM_PROMPT +
+      annotationHint(hasAnnotation, annotationPosition) +
+      referenceHint(hasReferenceImage, usage, referenceImageIndex)
 
   try {
     const completion = await openai.chat.completions.create({
       model: "google/gemini-2.5-flash",
       messages: [
-        {
-          role: "system",
-          content:
-            SYSTEM_PROMPT +
-            annotationHint(hasAnnotation, annotationPosition) +
-            referenceHint(hasReferenceImage, usage, referenceImageIndex),
-        },
+        { role: "system", content: systemContent },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.3,

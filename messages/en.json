@@ -50,7 +50,8 @@
     "upscaleDesc": "Adds 3-8s. Produces a sharper, higher-resolution output.",
     "annotateHint": "Click anywhere on the image to mark where to apply the edit",
     "annotateMarked": "Position marked — the edit will be applied here. Click again to move, or clear.",
-    "annotateClear": "Clear mark"
+    "annotateClear": "Clear mark",
+    "composerHint": "Drag the reference to hint position, blue corner to hint size. The reference's design (shape, material, text) is binding; position and size are hints — the model will adjust for aesthetic integration."
   },
   "features": {
     "title": "Core Features",

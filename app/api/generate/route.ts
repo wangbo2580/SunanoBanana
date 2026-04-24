@@ -6,6 +6,8 @@ import { uploadDataUrlToStorage } from "@/lib/supabase/storage"
 export const maxDuration = 60
 
 const MAX_USAGE = 50
+const IMAGE_MODEL =
+  process.env.IMAGE_MODEL || "bytedance-seed/seedream-4.5"
 
 // 内存存储使用次数（serverless 冷启动会重置，演示用）
 const usageMap = new Map<string, number>()
@@ -48,9 +50,11 @@ export async function POST(request: NextRequest) {
   try {
     const {
       imageUrl,
+      compositeImageUrl,
       annotatedImageUrl,
       annotationPosition,
       referenceImageUrl,
+      isPreComposited,
       prompt,
       anonymousId,
       referenceUsage,
@@ -85,37 +89,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 1. 改写 prompt（中译英 + 结构化模板 + 标记位置 + 参考图用途）
+    // 1. 改写 prompt（结构化模板 + 分支）
     const usage: ReferenceUsage = (referenceUsage as ReferenceUsage) || "none"
     const refinedPrompt = await rewritePrompt(
       prompt,
       usage,
-      !!referenceImageUrl,
-      !!annotatedImageUrl,
-      annotationPosition
+      !!referenceImageUrl && !isPreComposited,
+      !!annotatedImageUrl && !isPreComposited,
+      annotationPosition,
+      !!isPreComposited
     )
 
-    // 2. 构造 Gemini 请求
-    // 图片顺序：清洁原图 → 带红色标记的图（如有）→ 参考图（如有）→ 文字
+    // 2. 构造图像模型请求
+    // 预合成模式：清洁原图 + 合成 mockup（供模型看位置/大小/设计提示）
+    // 非合成模式：清洁原图 → 带标记图（如有）→ 参考图（如有）
     const content: any[] = [
       { type: "image_url", image_url: { url: imageUrl } },
     ]
-    if (annotatedImageUrl) {
-      content.push({
-        type: "image_url",
-        image_url: { url: annotatedImageUrl },
-      })
-    }
-    if (referenceImageUrl) {
-      content.push({
-        type: "image_url",
-        image_url: { url: referenceImageUrl },
-      })
+    if (isPreComposited) {
+      if (compositeImageUrl) {
+        content.push({
+          type: "image_url",
+          image_url: { url: compositeImageUrl },
+        })
+      }
+    } else {
+      if (annotatedImageUrl) {
+        content.push({
+          type: "image_url",
+          image_url: { url: annotatedImageUrl },
+        })
+      }
+      if (referenceImageUrl) {
+        content.push({
+          type: "image_url",
+          image_url: { url: referenceImageUrl },
+        })
+      }
     }
     content.push({ type: "text", text: refinedPrompt })
 
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-2.5-flash-image",
+      model: IMAGE_MODEL,
       messages: [
         {
           role: "user",

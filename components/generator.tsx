@@ -26,6 +26,11 @@ import {
   MapPin,
 } from "lucide-react"
 import { uploadImage } from "@/lib/supabase/upload-client"
+import {
+  ReferenceComposer,
+  flattenComposite,
+  type LayerTransform,
+} from "@/components/reference-composer"
 
 async function compositeAnnotatedImage(
   imageUrl: string,
@@ -140,6 +145,24 @@ export function Generator() {
   const [annotation, setAnnotation] = useState<{ x: number; y: number } | null>(
     null
   )
+  const [layer, setLayer] = useState<LayerTransform>({
+    xPct: 0.5,
+    yPct: 0.5,
+    widthPct: 0.25,
+  })
+
+  // 当参考图变化时重置浮层位置
+  useEffect(() => {
+    if (referenceImageUrl) {
+      setLayer({ xPct: 0.5, yPct: 0.5, widthPct: 0.25 })
+    }
+  }, [referenceImageUrl])
+
+  // 切到 style / background 时不需要合成
+  const showComposer =
+    !!selectedImageUrl &&
+    !!referenceImageUrl &&
+    referenceUsage === "add_object"
   const [isUploadingMain, setIsUploadingMain] = useState(false)
   const [isUploadingRef, setIsUploadingRef] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -238,8 +261,24 @@ export function Generator() {
     try {
       const anonymousId = getAnonymousId()
 
+      let compositeImageUrl: string | null = null
       let annotatedImageUrl: string | null = null
-      if (annotation) {
+      let isPreComposited = false
+
+      if (showComposer && referenceImageUrl) {
+        // 合成 mockup 模式：把参考图浮层扁平化进主图副本（作为位置/大小/设计提示）
+        const blob = await flattenComposite(
+          selectedImageUrl,
+          referenceImageUrl,
+          layer
+        )
+        const file = new File([blob], `composite-${Date.now()}.png`, {
+          type: "image/png",
+        })
+        compositeImageUrl = await uploadImage(file, anonymousId, "composite")
+        isPreComposited = true
+      } else if (annotation) {
+        // 标记模式：上传带红色准心靶标的副本
         const blob = await compositeAnnotatedImage(selectedImageUrl, annotation)
         const file = new File([blob], `annotated-${Date.now()}.png`, {
           type: "image/png",
@@ -252,12 +291,15 @@ export function Generator() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl: selectedImageUrl,
-          annotatedImageUrl,
-          annotationPosition: annotation,
-          referenceImageUrl,
+          compositeImageUrl,
+          annotatedImageUrl: isPreComposited ? null : annotatedImageUrl,
+          annotationPosition: isPreComposited ? null : annotation,
+          referenceImageUrl: isPreComposited ? null : referenceImageUrl,
+          isPreComposited,
           prompt: prompt.trim(),
           anonymousId,
-          referenceUsage: referenceImageUrl ? referenceUsage : undefined,
+          referenceUsage:
+            !isPreComposited && referenceImageUrl ? referenceUsage : undefined,
           upscale: shouldUpscale,
         }),
       })
@@ -397,6 +439,29 @@ export function Generator() {
                           {t("uploading")}
                         </p>
                       </div>
+                    </div>
+                  ) : selectedImageUrl && showComposer && referenceImageUrl ? (
+                    <div className="space-y-2">
+                      <div className="relative border-2 rounded-lg p-4 bg-muted/30">
+                        <ReferenceComposer
+                          mainSrc={selectedImageUrl}
+                          referenceSrc={referenceImageUrl}
+                          layer={layer}
+                          onChange={setLayer}
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 z-10"
+                          onClick={clearImage}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        {t("composerHint")}
+                      </p>
                     </div>
                   ) : selectedImageUrl ? (
                     <div className="space-y-2">
