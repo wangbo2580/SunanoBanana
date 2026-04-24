@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       prompt,
       anonymousId,
       referenceUsage,
+      hasAnnotation,
       upscale: shouldUpscale,
     } = await request.json()
 
@@ -83,12 +84,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 1. 改写 prompt（中译英 + 结构化模板）
+    // 1. 改写 prompt（中译英 + 结构化模板 + 标记位置）
     const usage: ReferenceUsage = (referenceUsage as ReferenceUsage) || "none"
     const refinedPrompt = await rewritePrompt(
       prompt,
       usage,
-      !!referenceImageUrl
+      !!referenceImageUrl,
+      !!hasAnnotation
     )
 
     // 2. 构造 Gemini 请求

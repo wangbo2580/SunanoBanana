@@ -5,7 +5,7 @@ const BUCKET = "generator-images"
 export async function uploadImage(
   file: File,
   anonymousId: string,
-  kind: "main" | "reference" = "main"
+  kind: string = "main"
 ): Promise<string> {
   const supabase = createClient()
   const ext = (file.name.split(".").pop() || "png").toLowerCase()

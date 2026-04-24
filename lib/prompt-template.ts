@@ -45,10 +45,21 @@ function referenceHint(
   return ""
 }
 
+function annotationHint(hasAnnotation: boolean): string {
+  if (!hasAnnotation) return ""
+  return `\n\nContext: The main image contains a bright red circular marker drawn on top of it. This marker is NOT part of the scene — it is a positional guide placed by the user to indicate the exact location where the edit should occur.
+
+Your rewritten instruction MUST:
+1. Explicitly anchor the edit to the marker position, e.g. "at the exact position indicated by the red circular marker in the image".
+2. Include an explicit instruction to remove the red marker in the output so it does not appear in the final edited image.
+3. Preserve every other pixel of the image unchanged, except the intended edit and the removal of the marker.`
+}
+
 export async function rewritePrompt(
   userPrompt: string,
   usage: ReferenceUsage = "none",
-  hasReferenceImage: boolean = false
+  hasReferenceImage: boolean = false,
+  hasAnnotation: boolean = false
 ): Promise<string> {
   try {
     const completion = await openai.chat.completions.create({
@@ -56,7 +67,10 @@ export async function rewritePrompt(
       messages: [
         {
           role: "system",
-          content: SYSTEM_PROMPT + referenceHint(hasReferenceImage, usage),
+          content:
+            SYSTEM_PROMPT +
+            referenceHint(hasReferenceImage, usage) +
+            annotationHint(hasAnnotation),
         },
         { role: "user", content: userPrompt },
       ],

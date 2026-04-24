@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import {
   Upload,
   ImageIcon,
@@ -24,8 +23,51 @@ import {
   X,
   AlertCircle,
   Wand2,
+  MapPin,
 } from "lucide-react"
 import { uploadImage } from "@/lib/supabase/upload-client"
+
+async function compositeAnnotatedImage(
+  imageUrl: string,
+  annotation: { x: number; y: number }
+): Promise<Blob> {
+  const img = new Image()
+  img.crossOrigin = "anonymous"
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve()
+    img.onerror = () => reject(new Error("Failed to load image for compositing"))
+    img.src = imageUrl
+  })
+  const canvas = document.createElement("canvas")
+  canvas.width = img.naturalWidth
+  canvas.height = img.naturalHeight
+  const ctx = canvas.getContext("2d")
+  if (!ctx) throw new Error("Canvas 2D context not available")
+  ctx.drawImage(img, 0, 0)
+
+  const cx = annotation.x * canvas.width
+  const cy = annotation.y * canvas.height
+  const radius = Math.max(canvas.width, canvas.height) * 0.035
+  const strokeWidth = Math.max(4, canvas.width * 0.005)
+
+  ctx.beginPath()
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+  ctx.fillStyle = "rgba(255, 0, 0, 0.35)"
+  ctx.fill()
+  ctx.lineWidth = strokeWidth
+  ctx.strokeStyle = "rgba(235, 0, 0, 1)"
+  ctx.stroke()
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error("Canvas toBlob returned null"))
+      },
+      "image/png"
+    )
+  })
+}
 
 interface GeneratedImage {
   type: string
@@ -55,6 +97,9 @@ export function Generator() {
     useState<ReferenceUsage>("add_object")
   const [prompt, setPrompt] = useState("")
   const [shouldUpscale, setShouldUpscale] = useState(false)
+  const [annotation, setAnnotation] = useState<{ x: number; y: number } | null>(
+    null
+  )
   const [isUploadingMain, setIsUploadingMain] = useState(false)
   const [isUploadingRef, setIsUploadingRef] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -92,6 +137,7 @@ export function Generator() {
     }
     setIsUploadingMain(true)
     setError(null)
+    setAnnotation(null)
     try {
       const url = await uploadImage(file, getAnonymousId(), "main")
       setSelectedImageUrl(url)
@@ -100,6 +146,16 @@ export function Generator() {
     } finally {
       setIsUploadingMain(false)
     }
+  }
+
+  const handleImageClickToAnnotate = (
+    e: React.MouseEvent<HTMLImageElement>
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width
+    const y = (e.clientY - rect.top) / rect.height
+    if (x < 0 || x > 1 || y < 0 || y > 1) return
+    setAnnotation({ x, y })
   }
 
   const handleReferenceImageUpload = async (
@@ -141,15 +197,26 @@ export function Generator() {
 
     try {
       const anonymousId = getAnonymousId()
+
+      let effectiveImageUrl = selectedImageUrl
+      if (annotation) {
+        const blob = await compositeAnnotatedImage(selectedImageUrl, annotation)
+        const file = new File([blob], `annotated-${Date.now()}.png`, {
+          type: "image/png",
+        })
+        effectiveImageUrl = await uploadImage(file, anonymousId, "annotated")
+      }
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageUrl: selectedImageUrl,
+          imageUrl: effectiveImageUrl,
           referenceImageUrl,
           prompt: prompt.trim(),
           anonymousId,
           referenceUsage: referenceImageUrl ? referenceUsage : undefined,
+          hasAnnotation: !!annotation,
           upscale: shouldUpscale,
         }),
       })
@@ -206,6 +273,7 @@ export function Generator() {
     setSelectedImageUrl(imgUrl)
     setReferenceImageUrl(null)
     setPrompt("")
+    setAnnotation(null)
     setGeneratedImages([])
     setResponseText("")
     setRefinedPrompt("")
@@ -218,6 +286,7 @@ export function Generator() {
   const clearImage = () => {
     setSelectedImageUrl(null)
     setReferenceImageUrl(null)
+    setAnnotation(null)
     setGeneratedImages([])
     setResponseText("")
     setRefinedPrompt("")
@@ -279,40 +348,71 @@ export function Generator() {
                   <Label className="text-lg font-semibold mb-4 block">
                     {t("referenceImage")}
                   </Label>
-                  <div
-                    className="relative border-2 border-dashed rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/30"
-                    onClick={() =>
-                      !isUploadingMain &&
-                      document.getElementById("image-upload")?.click()
-                    }
-                  >
-                    {isUploadingMain ? (
+                  {isUploadingMain ? (
+                    <div className="relative border-2 border-dashed rounded-lg p-12 text-center bg-muted/30">
                       <div className="flex flex-col items-center justify-center py-8">
                         <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
                         <p className="text-sm text-muted-foreground">
                           {t("uploading")}
                         </p>
                       </div>
-                    ) : selectedImageUrl ? (
-                      <>
-                        <img
-                          src={selectedImageUrl}
-                          alt="Uploaded"
-                          className="max-w-full h-48 mx-auto object-contain rounded"
-                        />
+                    </div>
+                  ) : selectedImageUrl ? (
+                    <div className="space-y-2">
+                      <div className="relative border-2 rounded-lg p-4 bg-muted/30">
+                        <div className="relative inline-block mx-auto w-full">
+                          <img
+                            src={selectedImageUrl}
+                            alt="Uploaded"
+                            onClick={handleImageClickToAnnotate}
+                            className="max-w-full max-h-72 mx-auto object-contain rounded cursor-crosshair block"
+                          />
+                          {annotation && (
+                            <div
+                              className="absolute rounded-full bg-red-500/35 border-[3px] border-red-600 pointer-events-none shadow-lg"
+                              style={{
+                                left: `${annotation.x * 100}%`,
+                                top: `${annotation.y * 100}%`,
+                                width: "36px",
+                                height: "36px",
+                                transform: "translate(-50%, -50%)",
+                              }}
+                            />
+                          )}
+                        </div>
                         <Button
                           variant="destructive"
                           size="icon"
                           className="absolute top-2 right-2"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            clearImage()
-                          }}
+                          onClick={clearImage}
                         >
                           <X className="w-4 h-4" />
                         </Button>
-                      </>
-                    ) : (
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground flex-1 flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                          {annotation ? t("annotateMarked") : t("annotateHint")}
+                        </p>
+                        {annotation && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => setAnnotation(null)}
+                          >
+                            {t("annotateClear")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="relative border-2 border-dashed rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/30"
+                      onClick={() =>
+                        document.getElementById("image-upload")?.click()
+                      }
+                    >
                       <div className="space-y-4">
                         <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
                         <div>
@@ -322,8 +422,8 @@ export function Generator() {
                           </p>
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <input
                     id="image-upload"
                     type="file"

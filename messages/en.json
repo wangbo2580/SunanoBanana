@@ -47,7 +47,10 @@
     "referenceUsageStyle": "Apply its style to the main image",
     "referenceUsageBackground": "Use it as the new background",
     "upscaleLabel": "4× Upscale (Real-ESRGAN)",
-    "upscaleDesc": "Adds 3-8s. Produces a sharper, higher-resolution output."
+    "upscaleDesc": "Adds 3-8s. Produces a sharper, higher-resolution output.",
+    "annotateHint": "Click anywhere on the image to mark where to apply the edit",
+    "annotateMarked": "Position marked — the edit will be applied here. Click again to move, or clear.",
+    "annotateClear": "Clear mark"
   },
   "features": {
     "title": "Core Features",

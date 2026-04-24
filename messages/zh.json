@@ -47,7 +47,10 @@
     "referenceUsageStyle": "将参考图的风格应用到主图",
     "referenceUsageBackground": "用参考图作为新背景",
     "upscaleLabel": "4 倍高清化（Real-ESRGAN）",
-    "upscaleDesc": "额外 3-8 秒，输出更锐利、更高分辨率"
+    "upscaleDesc": "额外 3-8 秒，输出更锐利、更高分辨率",
+    "annotateHint": "点击图片标记你想编辑的位置",
+    "annotateMarked": "已标记位置。再次点击可移动，或点清除。",
+    "annotateClear": "清除标记"
   },
   "features": {
     "title": "核心功能",
