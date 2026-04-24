@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useRef, useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -32,6 +32,7 @@ import {
   flattenComposite,
   type LayerTransform,
 } from "@/components/reference-composer"
+import { MaskPainter, type MaskPainterHandle } from "@/components/mask-painter"
 
 async function compositeAnnotatedImage(
   imageUrl: string,
@@ -152,6 +153,8 @@ export function Generator() {
     widthPct: 0.25,
   })
   const [useComposerPlacement, setUseComposerPlacement] = useState(true)
+  const [isInpaintMode, setIsInpaintMode] = useState(false)
+  const maskPainterRef = useRef<MaskPainterHandle>(null)
 
   // 当参考图变化时重置浮层位置
   useEffect(() => {
@@ -266,7 +269,57 @@ export function Generator() {
 
       let compositeImageUrl: string | null = null
       let annotatedImageUrl: string | null = null
+      let maskImageUrl: string | null = null
       let isPreComposited = false
+
+      // Inpaint 模式：导出 mask → 上传 → 直接走 fal.ai 分支
+      if (isInpaintMode) {
+        const maskBlob = await maskPainterRef.current?.exportMask()
+        if (!maskBlob) {
+          throw new Error(
+            "请先在图片上涂抹出要编辑的区域 (Paint the area to edit first)"
+          )
+        }
+        const maskFile = new File([maskBlob], `mask-${Date.now()}.png`, {
+          type: "image/png",
+        })
+        maskImageUrl = await uploadImage(maskFile, anonymousId, "mask")
+
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: selectedImageUrl,
+            maskImageUrl,
+            isInpaint: true,
+            prompt: prompt.trim(),
+            anonymousId,
+          }),
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          let errorMsg = text
+          try {
+            const data = JSON.parse(text)
+            errorMsg = data.error || text
+          } catch {
+            // noop
+          }
+          throw new Error(errorMsg || "Inpaint failed")
+        }
+
+        const data = await response.json()
+        if (data.images && data.images.length > 0) {
+          setGeneratedImages(data.images)
+        }
+        if (data.refinedPrompt) setRefinedPrompt(data.refinedPrompt)
+        if (data.remaining !== undefined) setRemaining(data.remaining)
+        if (!data.images || data.images.length === 0) {
+          setError(t("noImageGenerated"))
+        }
+        return
+      }
 
       if (showComposer && referenceImageUrl) {
         // 合成 mockup 模式：把参考图浮层扁平化进主图副本（作为位置/大小/设计提示）
@@ -434,7 +487,28 @@ export function Generator() {
                   <Label className="text-lg font-semibold mb-4 block">
                     {t("referenceImage")}
                   </Label>
-                  {composerEligible && (
+                  {selectedImageUrl && !isUploadingMain && (
+                    <div className="flex items-center justify-between p-3 mb-3 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-300/50">
+                      <div className="flex-1">
+                        <Label
+                          htmlFor="inpaint-toggle"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          {t("inpaintToggleLabel")}
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t("inpaintToggleDesc")}
+                        </p>
+                      </div>
+                      <Switch
+                        id="inpaint-toggle"
+                        checked={isInpaintMode}
+                        onCheckedChange={setIsInpaintMode}
+                        disabled={isGenerating}
+                      />
+                    </div>
+                  )}
+                  {composerEligible && !isInpaintMode && (
                     <div className="flex items-center justify-between p-3 mb-3 border rounded-lg bg-muted/30">
                       <div className="flex-1">
                         <Label
@@ -463,6 +537,32 @@ export function Generator() {
                           {t("uploading")}
                         </p>
                       </div>
+                    </div>
+                  ) : selectedImageUrl && isInpaintMode ? (
+                    <div className="space-y-2">
+                      <div className="relative border-2 rounded-lg p-4 bg-muted/30">
+                        <MaskPainter
+                          ref={maskPainterRef}
+                          mainSrc={selectedImageUrl}
+                          disabled={isGenerating}
+                          paintLabel={t("inpaintPaint")}
+                          eraseLabel={t("inpaintErase")}
+                          brushLabel={t("inpaintBrush")}
+                          clearLabel={t("inpaintClear")}
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 z-10"
+                          onClick={clearImage}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        {t("inpaintHint")}
+                      </p>
                     </div>
                   ) : selectedImageUrl && showComposer && referenceImageUrl ? (
                     <div className="space-y-2">
@@ -591,7 +691,7 @@ export function Generator() {
                 </div>
 
                 {/* 参考图（可选） */}
-                <div>
+                <div className={isInpaintMode ? "hidden" : ""}>
                   <Label className="text-lg font-semibold mb-4 block">
                     {t("styleReferenceImage")}
                   </Label>

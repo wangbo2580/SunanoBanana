@@ -8,6 +8,8 @@ export const maxDuration = 60
 const MAX_USAGE = 50
 const IMAGE_MODEL =
   process.env.IMAGE_MODEL || "bytedance-seed/seedream-4.5"
+const INPAINT_MODEL =
+  process.env.INPAINT_MODEL || "fal-ai/flux-pro/v1/fill"
 
 // 内存存储使用次数（serverless 冷启动会重置，演示用）
 const usageMap = new Map<string, number>()
@@ -20,6 +22,47 @@ const openai = new OpenAI({
     "X-Title": "Nano Banana AI Image Editor",
   },
 })
+
+async function inpaintWithFal(
+  imageUrl: string,
+  maskUrl: string,
+  prompt: string
+): Promise<string> {
+  const falKey = process.env.FAL_KEY
+  if (!falKey) {
+    throw new Error("FAL_KEY not configured")
+  }
+  const res = await fetch(`https://fal.run/${INPAINT_MODEL}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${falKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      image_url: imageUrl,
+      mask_url: maskUrl,
+      prompt,
+      num_images: 1,
+      output_format: "png",
+      safety_tolerance: "2",
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Inpaint failed: ${res.status} ${text}`)
+  }
+  const data = await res.json()
+  const url =
+    data?.images?.[0]?.url ||
+    data?.image?.url ||
+    (typeof data?.images?.[0] === "string" ? data.images[0] : null)
+  if (!url) {
+    throw new Error(
+      "Inpaint succeeded but no image URL in response: " + JSON.stringify(data)
+    )
+  }
+  return url
+}
 
 async function upscaleWithRealEsrgan(imageUrl: string): Promise<string> {
   const falKey = process.env.FAL_KEY
@@ -54,6 +97,8 @@ export async function POST(request: NextRequest) {
       annotatedImageUrl,
       annotationPosition,
       referenceImageUrl,
+      maskImageUrl,
+      isInpaint,
       isPreComposited,
       prompt,
       anonymousId,
@@ -87,6 +132,47 @@ export async function POST(request: NextRequest) {
         { error: "Image and prompt are required", code: "INVALID_REQUEST" },
         { status: 400 }
       )
+    }
+
+    // === Inpaint 分支：走 fal.ai，只改 mask 区域 ===
+    if (isInpaint) {
+      if (!maskImageUrl) {
+        return NextResponse.json(
+          { error: "Mask image is required for inpaint mode", code: "INVALID_REQUEST" },
+          { status: 400 }
+        )
+      }
+      try {
+        const outputUrl = await inpaintWithFal(
+          imageUrl,
+          maskImageUrl,
+          prompt.trim()
+        )
+        const newUsageCount = currentUsage + 1
+        usageMap.set(anonymousId, newUsageCount)
+        return NextResponse.json({
+          success: true,
+          images: [
+            {
+              type: "image_url",
+              image_url: { url: outputUrl },
+            },
+          ],
+          text: "",
+          refinedPrompt: prompt.trim(),
+          usage_count: newUsageCount,
+          max_usage: MAX_USAGE,
+          remaining: MAX_USAGE - newUsageCount,
+        })
+      } catch (err: any) {
+        return NextResponse.json(
+          {
+            error: err.message || "Inpaint failed",
+            code: "INPAINT_FAILED",
+          },
+          { status: 500 }
+        )
+      }
     }
 
     // 1. 改写 prompt（结构化模板 + 分支）

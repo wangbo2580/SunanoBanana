@@ -53,7 +53,14 @@
     "annotateClear": "清除标记",
     "composerHint": "拖动参考图暗示位置，拖右下蓝点暗示大小。参考图的设计（形状/材质/文字）是强约束，位置和大小是提示——模型会为审美协调做微调。",
     "composerToggleLabel": "拖拽定位参考图",
-    "composerToggleDesc": "开：把参考图拖到主图上作为位置/大小提示。关：模型自由决定放置。"
+    "composerToggleDesc": "开：把参考图拖到主图上作为位置/大小提示。关：模型自由决定放置。",
+    "inpaintToggleLabel": "精确涂抹编辑（画笔模式）",
+    "inpaintToggleDesc": "开：涂抹想要编辑的区域，只改涂抹的地方，其他像素一字不动。基于 fal.ai FLUX Fill，需要 FAL_KEY。",
+    "inpaintHint": "涂抹你想编辑的区域。涂抹外的所有像素会原样保留。",
+    "inpaintPaint": "画",
+    "inpaintErase": "擦",
+    "inpaintBrush": "笔刷",
+    "inpaintClear": "清空"
   },
   "features": {
     "title": "核心功能",

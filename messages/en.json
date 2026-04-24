@@ -53,7 +53,14 @@
     "annotateClear": "Clear mark",
     "composerHint": "Drag the reference to hint position, blue corner to hint size. The reference's design (shape, material, text) is binding; position and size are hints — the model will adjust for aesthetic integration.",
     "composerToggleLabel": "Drag-to-position reference",
-    "composerToggleDesc": "On: drag the reference onto the main image as a position/size hint. Off: the model picks placement freely."
+    "composerToggleDesc": "On: drag the reference onto the main image as a position/size hint. Off: the model picks placement freely.",
+    "inpaintToggleLabel": "Precise mask edit (brush mode)",
+    "inpaintToggleDesc": "On: paint the area to edit; only that area is re-rendered, everything else stays pixel-identical. Uses FLUX Fill on fal.ai — requires FAL_KEY.",
+    "inpaintHint": "Paint the area where you want the edit. Everything outside your paint will be preserved pixel-by-pixel.",
+    "inpaintPaint": "Paint",
+    "inpaintErase": "Erase",
+    "inpaintBrush": "Brush",
+    "inpaintClear": "Clear"
   },
   "features": {
     "title": "Core Features",
