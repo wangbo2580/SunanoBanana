@@ -29,6 +29,29 @@ Rules:
 - If the user's request is ambiguous, make a reasonable concrete choice rather than staying vague.
 - Output ONLY the rewritten instruction. No preamble, no explanation, no code fences, no Markdown headers.`
 
+// 严格翻译模式：composer 流程下用户已通过拖拽参考图表达了完整意图，
+// 改写器不应扩写 / 脑补细节，只做必要的中译英 + 固定结尾说明。
+const COMPOSER_SYSTEM_PROMPT = `You translate a user's short image-edit request into English for a downstream image editing model that will see TWO images (Image #1: clean scene; Image #2: user-placed mockup).
+
+STRICT RULES:
+- If the user writes in Chinese or another language, translate to clean, literal English.
+- If the user already writes in English, copy their words verbatim (only fix grammar if needed).
+- NEVER invent, embellish, or add details the user did not write. Forbidden: inventing measurements, materials (e.g. "brushed silver", "acrylic"), colors, lighting effects (e.g. "warm glow"), environment elements (e.g. "building entrance") that are not in the user's text.
+- Preserve direction words EXACTLY (右 → right, 左 → left, 右上 → upper-right, 上 → top, 下 → bottom). Never swap.
+- Preserve the user's length: if they wrote one short sentence, output one short sentence.
+
+OUTPUT FORMAT (exactly two parts, separated by a blank line):
+
+<translated user request, faithful, no additions>
+
+Use Image #1 as the final base scene. Image #2 is a user-placed mockup — preserve the mockup element's design (shape, material, text, 3D form / mounting) but RE-RENDER it into Image #1 with natural lighting, shadows, and perspective. The mockup's position and size are approximate hints; adjust slightly for aesthetic coherence and real-world scale, but stay within the same general region the user indicated.
+
+Do NOT add anything else. No preamble, no headers, no explanations.`
+
+const COMPOSER_FALLBACK_SUFFIX = `
+
+Use Image #1 as the final base scene. Image #2 is a user-placed mockup — preserve the mockup element's design (shape, material, text, 3D form / mounting) but re-render it into Image #1 with natural lighting, shadows, and perspective. The mockup's position and size are approximate hints; adjust slightly for aesthetic coherence and real-world scale.`
+
 function referenceHint(
   hasReferenceImage: boolean,
   usage: ReferenceUsage,
@@ -60,29 +83,6 @@ Context: Image #${idx} is a BACKGROUND REFERENCE. Replace the main image's backg
   return ""
 }
 
-function precompositedHint(isPreComposited: boolean): string {
-  if (!isPreComposited) return ""
-  return `
-
-Context: TWO images are provided.
-- Image #1 is the CLEAN base scene — this is the foundation for the final output.
-- Image #2 is a USER MOCKUP where the user has placed a reference element onto the scene. The mockup communicates three things:
-  * WHAT element the user wants (design, style, shape, material — binding)
-  * WHERE they roughly want it (position — treat as an approximate hint, not a strict constraint)
-  * HOW BIG they roughly want it (size — treat as an approximate hint, not a strict constraint)
-
-Your rewritten instruction MUST:
-1. Produce the final output based on Image #1 (the clean scene). Re-render the user's desired element naturally into the scene — do NOT paste or copy pixels from the mockup.
-2. PRESERVE from the mockup (these are requirements, not hints):
-   - The element's design: shape, silhouette, material, texture, color palette, any text content verbatim.
-   - The element's 3D form and mounting style: if the mockup shows a side-mounted / protruding / hanging sign, render it side-mounted / protruding / hanging in the output (do NOT flatten into a wall-mounted plaque).
-3. TREAT AS HINTS (model has aesthetic discretion):
-   - Exact position: use the mockup's placement as a starting point, but the model may adjust slightly for a more natural, aesthetically balanced composition within the scene. Stay roughly in the same region the user indicated — do not drastically relocate (e.g. upper-right → lower-left is forbidden, but upper-right → slightly-more-centered-upper-right is allowed).
-   - Exact size: the mockup size may look oversized or undersized compared to real-world scale. Adjust to match the apparent scale of adjacent real-world objects in the scene (e.g., a shop sign should be proportional to the door/wall it's near).
-4. Render with full photographic integration: accurate shadows matching the scene's existing light direction and intensity, matching color grading and ambient light, correct perspective for where the element sits in 3D space, clean edges that do NOT show any pasted-in artifacts.
-5. Preserve the clean scene (Image #1) as close to pixel-identical as possible outside the region occupied by the added element.
-6. Output should look like the element was physically present in the scene when photographed — not a composite, not a mockup, not a paste job. Aesthetically coherent with the scene's mood.`
-}
 
 function annotationHint(
   hasAnnotation: boolean,
@@ -125,13 +125,18 @@ export async function rewritePrompt(
   //   next = reference image (if hasReferenceImage and not pre-composited)
   const referenceImageIndex = 1 + (hasAnnotation ? 1 : 0) + 1
 
-  // In pre-composited mode, annotation and reference hints are irrelevant —
-  // the user has already done positioning manually.
+  // Composer 模式走极简翻译（避免脑补细节）；其他模式走结构化改写
   const systemContent = isPreComposited
-    ? SYSTEM_PROMPT + precompositedHint(true)
+    ? COMPOSER_SYSTEM_PROMPT
     : SYSTEM_PROMPT +
       annotationHint(hasAnnotation, annotationPosition) +
       referenceHint(hasReferenceImage, usage, referenceImageIndex)
+
+  const temperature = isPreComposited ? 0.1 : 0.3
+  const maxTokens = isPreComposited ? 400 : 600
+  const fallback = isPreComposited
+    ? userPrompt + COMPOSER_FALLBACK_SUFFIX
+    : userPrompt
 
   try {
     const completion = await openai.chat.completions.create({
@@ -140,14 +145,14 @@ export async function rewritePrompt(
         { role: "system", content: systemContent },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.3,
-      max_tokens: 600,
+      temperature,
+      max_tokens: maxTokens,
     })
 
     const rewritten = completion.choices[0]?.message?.content?.trim()
-    return rewritten && rewritten.length > 10 ? rewritten : userPrompt
+    return rewritten && rewritten.length > 10 ? rewritten : fallback
   } catch (err) {
     console.error("Prompt rewrite failed, falling back to original:", err)
-    return userPrompt
+    return fallback
   }
 }
