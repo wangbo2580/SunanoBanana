@@ -56,7 +56,7 @@
     "composerToggleDesc": "开：把参考图拖到主图上作为位置/大小提示。关：模型自由决定放置。",
     "inpaintToggleLabel": "精确涂抹编辑（画笔模式）",
     "inpaintToggleDesc": "开：涂抹想要编辑的区域，只改涂抹的地方，其他像素一字不动。基于 fal.ai FLUX Fill，需要 FAL_KEY。",
-    "inpaintHint": "涂抹你想编辑的区域。涂抹外的所有像素会原样保留。",
+    "inpaintHint": "涂抹要编辑的区域（建议一整块完整区域，别太零散）。外面的所有像素会原样保留。Prompt 请具体描述要放入的物体，例如「红色木质箭头侧招」而不是「一个招牌」。",
     "inpaintPaint": "画",
     "inpaintErase": "擦",
     "inpaintBrush": "笔刷",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { rewritePrompt, type ReferenceUsage } from "@/lib/prompt-template"
+import { translateToEnglish } from "@/lib/translate"
 import { uploadDataUrlToStorage } from "@/lib/supabase/storage"
 
 export const maxDuration = 60
@@ -143,10 +144,18 @@ export async function POST(request: NextRequest) {
         )
       }
       try {
+        // FLUX 是英文主导，先严格翻译（只翻译，不扩写）
+        const englishPrompt = await translateToEnglish(prompt.trim())
+        // 拼 inpaint 专用指令：清晰告诉模型填什么 + 保留周围场景
+        const hasChinese = /[一-鿿぀-ヿ]/.test(prompt.trim())
+        const finalPrompt = hasChinese
+          ? `${englishPrompt}\n\nFill the masked (white) region with the above subject. Seamlessly match the surrounding scene's lighting, perspective, color grading, and texture style. Keep the unmasked (black) region untouched.\n\nOriginal user intent (Chinese): ${prompt.trim()}`
+          : `${englishPrompt}\n\nFill the masked (white) region with the above subject. Seamlessly match the surrounding scene's lighting, perspective, color grading, and texture style. Keep the unmasked (black) region untouched.`
+
         const outputUrl = await inpaintWithFal(
           imageUrl,
           maskImageUrl,
-          prompt.trim()
+          finalPrompt
         )
         const newUsageCount = currentUsage + 1
         usageMap.set(anonymousId, newUsageCount)
@@ -159,7 +168,7 @@ export async function POST(request: NextRequest) {
             },
           ],
           text: "",
-          refinedPrompt: prompt.trim(),
+          refinedPrompt: finalPrompt,
           usage_count: newUsageCount,
           max_usage: MAX_USAGE,
           remaining: MAX_USAGE - newUsageCount,
