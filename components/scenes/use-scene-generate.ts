@@ -4,16 +4,12 @@ import { useState, useCallback } from "react"
 
 export type GenerateStatus = "idle" | "loading" | "success" | "error"
 
-interface GeneratedImage {
-  type: string
-  image_url: { url: string }
-}
-
 interface GenerateResult {
   status: GenerateStatus
   resultImage: string | null
   error: string | null
   remaining: number | null
+  iteration: number
 }
 
 function getAnonymousId(): string {
@@ -30,11 +26,11 @@ export function useSceneGenerate() {
   const [resultImage, setResultImage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [remaining, setRemaining] = useState<number | null>(null)
+  const [iteration, setIteration] = useState(0)
 
   const generate = useCallback(async (imageUrl: string, prompt: string) => {
     setStatus("loading")
     setError(null)
-    setResultImage(null)
 
     try {
       const anonymousId = getAnonymousId()
@@ -69,6 +65,7 @@ export function useSceneGenerate() {
       if (data.remaining !== undefined) {
         setRemaining(data.remaining)
       }
+      setIteration((prev) => prev + 1)
       setStatus("success")
     } catch (err: any) {
       setError(err.message || "生成失败，请稍后重试")
@@ -80,6 +77,7 @@ export function useSceneGenerate() {
     setStatus("idle")
     setResultImage(null)
     setError(null)
+    setIteration(0)
   }, [])
 
   return {
@@ -87,6 +85,7 @@ export function useSceneGenerate() {
     resultImage,
     error,
     remaining,
+    iteration,
     generate,
     reset,
   }

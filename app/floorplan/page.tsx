@@ -19,7 +19,7 @@ export default function FloorplanPage() {
     language: "bilingual",
   })
 
-  const { status, resultImage, error, generate, reset } = useSceneGenerate()
+  const { status, resultImage, error, generate, reset, iteration } = useSceneGenerate()
 
   const handleGenerate = async () => {
     if (!imageUrl) return
@@ -29,6 +29,15 @@ export default function FloorplanPage() {
   const handleReset = () => {
     setImageUrl(null)
     reset()
+  }
+  const handleIterate = async (iteratePrompt: string, strength: "subtle" | "strong") => {
+    if (!resultImage) return
+    const prefix = strength === "subtle"
+      ? "基于当前图片进行轻微调整"
+      : "基于当前图片进行优化修改"
+    const constraint = "保持整体空间结构、构图、光影氛围不变，严禁新增任何原图中不存在的物体。"
+    const fullPrompt = `${prefix}：${iteratePrompt}。${constraint}`
+    await generate(resultImage, fullPrompt)
   }
 
   return (
@@ -109,6 +118,8 @@ export default function FloorplanPage() {
                   originalImage={imageUrl}
                   resultImage={resultImage}
                   error={error}
+                  iteration={iteration}
+                  onIterate={handleIterate}
                   onDownload={() => {
                     if (resultImage) {
                       const link = document.createElement("a")
