@@ -26,7 +26,7 @@ export function UploadZone({
   onChange,
   label,
   hint = "支持 JPG、PNG 格式",
-  maxSizeMB = 10,
+  maxSizeMB = 20,
 }: UploadZoneProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
