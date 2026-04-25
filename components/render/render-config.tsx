@@ -2,6 +2,7 @@
 
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -77,6 +78,19 @@ export function RenderConfigPanel({ value, onChange }: RenderConfigProps) {
           </Select>
         </div>
       )}
+
+      <div className="pt-2 border-t">
+        <Label className="text-sm font-medium mb-2 block">定制化要求（可选）</Label>
+        <p className="text-xs text-muted-foreground mb-2">
+          指定图中某些物品的规格、材质、样式等，例如："沙发改为焦糖色真皮"、"茶几换成大理石台面"
+        </p>
+        <Textarea
+          placeholder="输入定制化要求..."
+          className="min-h-[80px] text-sm"
+          value={value.customRequirements}
+          onChange={(e) => update({ customRequirements: e.target.value })}
+        />
+      </div>
     </div>
   )
 }

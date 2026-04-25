@@ -30,11 +30,17 @@ export function Hero() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link href="/render">
-              <Button size="lg" className="text-lg px-8">
-                开始使用
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              className="text-lg px-8"
+              onClick={() =>
+                document
+                  .getElementById("scenes")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              开始使用
+            </Button>
             <Link href="/edit">
               <Button size="lg" variant="outline" className="text-lg px-8 bg-transparent">
                 自由修图

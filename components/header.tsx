@@ -1,4 +1,6 @@
 import { cookies } from "next/headers"
+import Link from "next/link"
+import { Settings } from "lucide-react"
 import { LanguageSwitcher } from "./language-switcher"
 import { AuthButton } from "./auth-button"
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server"
@@ -25,6 +27,13 @@ export async function Header() {
             <span>Banana Pro</span>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/settings"
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              title="提示词设置"
+            >
+              <Settings className="w-5 h-5 text-muted-foreground" />
+            </Link>
             <LanguageSwitcher currentLocale={locale} />
             {isSupabaseConfigured() && <AuthButton user={user} />}
           </div>

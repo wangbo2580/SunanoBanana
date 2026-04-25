@@ -19,6 +19,7 @@ export default function RenderPage() {
     addFigure: false,
     figureEffect: "blur",
     quality: "4k",
+    customRequirements: "",
   })
 
   const { status, resultImage, error, generate, reset } = useSceneGenerate()

@@ -1,7 +1,19 @@
 "use client"
 
 import Link from "next/link"
-import { Palette, Grid3x3, Pipette, LayoutGrid, Wand2, ArrowRight } from "lucide-react"
+import {
+  Palette,
+  Grid3x3,
+  Pipette,
+  LayoutGrid,
+  Wand2,
+  Box,
+  Layers,
+  Sofa,
+  Ruler,
+  Move,
+  Film,
+} from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { SCENES } from "@/lib/prompt-templates"
 
@@ -11,11 +23,17 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Pipette,
   LayoutGrid,
   Wand2,
+  Box,
+  Layers,
+  Sofa,
+  Ruler,
+  Move,
+  Film,
 }
 
 export function SceneCards() {
   return (
-    <section className="py-16 md:py-24">
+    <section id="scenes" className="py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
@@ -48,7 +66,19 @@ export function SceneCards() {
                     </p>
                     <div className="flex items-center text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                       开始使用
-                      <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+                      <svg
+                        className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
                     </div>
                   </Card>
                 </Link>
