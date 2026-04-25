@@ -22,7 +22,7 @@ export async function Header() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2 text-xl font-bold">
             <span>🍌</span>
-            <span>SuMu Nano Banana</span>
+            <span>Banana Pro</span>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher currentLocale={locale} />

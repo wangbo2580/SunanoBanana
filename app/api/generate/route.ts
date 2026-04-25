@@ -15,14 +15,20 @@ const INPAINT_MODEL =
 // 内存存储使用次数（serverless 冷启动会重置，演示用）
 const usageMap = new Map<string, number>()
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": "https://nano-banana.vercel.app",
-    "X-Title": "Nano Banana AI Image Editor",
-  },
-})
+function getOpenAI() {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is not configured")
+  }
+  return new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey,
+    defaultHeaders: {
+      "HTTP-Referer": "https://nano-banana.vercel.app",
+      "X-Title": "Nano Banana AI Image Editor",
+    },
+  })
+}
 
 async function inpaintWithFal(
   imageUrl: string,
@@ -224,7 +230,7 @@ export async function POST(request: NextRequest) {
     }
     content.push({ type: "text", text: refinedPrompt })
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: IMAGE_MODEL,
       messages: [
         {

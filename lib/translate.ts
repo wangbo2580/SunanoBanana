@@ -3,14 +3,20 @@ import OpenAI from "openai"
 // FLUX / 部分西方模型对中文识别弱，inpaint 分支需要先翻译。
 // 其他图像模型（Gemini、Seedream 等）原生多语言，不经过这里。
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": "https://nano-banana.vercel.app",
-    "X-Title": "Nano Banana AI Image Editor",
-  },
-})
+function getOpenAI() {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is not configured")
+  }
+  return new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey,
+    defaultHeaders: {
+      "HTTP-Referer": "https://nano-banana.vercel.app",
+      "X-Title": "Nano Banana AI Image Editor",
+    },
+  })
+}
 
 const TRANSLATE_SYSTEM = `You are a strict literal translator. Translate the user's input to natural English.
 
@@ -52,7 +58,7 @@ export async function translateToEnglish(text: string): Promise<string> {
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: TRANSLATE_SYSTEM },
